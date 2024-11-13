@@ -1,14 +1,17 @@
-from core.services.binance_service import BinanceService
 from core.database.db_manager import DBManager
 
 
 def main():
+    # Inicializa o gerenciador do banco de dados
     db_manager = DBManager()
 
-    # Exibe todos os ativos salvos
-    saved_assets = db_manager.get_all_assets()
-    for saved_asset in saved_assets:
-        print(saved_asset)
+    # Calcula e exibe todos os ativos com o percentual de cada um em relação ao total da carteira
+    assets_with_percentages = db_manager.get_asset_percentages()
+    for asset in assets_with_percentages:
+        print(
+            f"Ativo: {asset['asset_name']}, Pontos: {asset['points']}, "
+            f"Preço Médio: {asset['average_price']}, Percentual da Carteira: {asset['percentage']:.2f}%"
+        )
 
 
 if __name__ == "__main__":

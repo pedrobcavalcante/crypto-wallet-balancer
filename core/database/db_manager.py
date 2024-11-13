@@ -9,7 +9,7 @@ class DBManager:
         self.db = TinyDB(db_path)
         self.assets_table = self.db.table("assets")
 
-    def save_asset(self, asset_name, percentage, average_price):
+    def save_asset(self, asset_name, points, average_price):
         """
         Salva um ativo no banco de dados com seu percentual da carteira e preço médio.
         """
@@ -20,7 +20,7 @@ class DBManager:
         if existing_asset:
             # Atualiza o ativo existente
             self.assets_table.update(
-                {"percentage": percentage, "average_price": average_price},
+                {"points": points, "average_price": average_price},
                 Asset.asset_name == asset_name,
             )
         else:
@@ -28,7 +28,7 @@ class DBManager:
             self.assets_table.insert(
                 {
                     "asset_name": asset_name,
-                    "percentage": percentage,
+                    "points": points,
                     "average_price": average_price,
                 }
             )

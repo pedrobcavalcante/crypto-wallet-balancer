@@ -1,11 +1,13 @@
 from core.services.binance_service import BinanceService
 from core.database.bnb_wallet_db_manager import BNBWalletDBManager
+from core.database.db_manager import DBManager
 
 
 def main():
-    # Inicializa o serviço da Binance e o gerenciador de banco de dados da carteira BNB
+    # Inicializa os serviços e gerenciadores de banco de dados
     binance_service = BinanceService()
     bnb_wallet_db = BNBWalletDBManager()
+    db_manager = DBManager()
 
     # Busca os ativos diretamente da Binance
     binance_assets = binance_service.get_account_assets()
@@ -64,6 +66,30 @@ def main():
                 f"Valor: ${asset['value']:.2f}, "
                 f"Percentual da Carteira: {asset['percentage']:.2f}%"
             )
+
+        # Agora, buscamos os percentuais salvos no db.json
+        saved_assets = db_manager.get_all_assets()
+        saved_asset_dict = {
+            asset["asset_name"].lower(): asset["percentage"] for asset in saved_assets
+        }
+
+        # Calcula a diferença percentual para cada ativo
+        print("\nDiferença Percentual entre a Carteira Atual e o Salvo no db.json:")
+        for asset in asset_details:
+            asset_name = asset["name"].lower()
+            if asset_name in saved_asset_dict:
+                saved_percentage = saved_asset_dict[asset_name]
+                current_percentage = asset["percentage"]
+                difference = current_percentage - saved_percentage
+                print(
+                    f"{asset['name']}: "
+                    f"Percentual Atual: {current_percentage:.2f}%, "
+                    f"Percentual Salvo: {saved_percentage:.2f}%, "
+                    f"Diferença: {difference:.2f}%"
+                )
+            else:
+                print(f"{asset['name']}: Não encontrado no db.json.")
+
     else:
         print("Nenhum valor disponível na carteira.")
 

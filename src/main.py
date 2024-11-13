@@ -31,10 +31,18 @@ def main():
         else:
             combined_assets[token_name] = quantity
 
-    # Exibe o total de cada ativo
-    print("Total de ativos combinados (Binance + BNB Wallet):")
+    # Exibe o total de cada ativo e seu preço atual
+    print("Total de ativos combinados (Binance + BNB Wallet) e preços atuais:")
     for asset_name, total_quantity in combined_assets.items():
-        print(f"{asset_name.upper()}: Quantidade: {total_quantity:.8f}")
+        current_price = binance_service.get_current_price(asset_name)
+        if current_price is not None:
+            print(
+                f"{asset_name.upper()}: Quantidade: {total_quantity:.8f}, Preço Atual: ${current_price:.2f}"
+            )
+        else:
+            print(
+                f"{asset_name.upper()}: Quantidade: {total_quantity:.8f}, Preço Atual: Não disponível"
+            )
 
 
 if __name__ == "__main__":

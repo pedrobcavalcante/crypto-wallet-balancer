@@ -31,18 +31,41 @@ def main():
         else:
             combined_assets[token_name] = quantity
 
-    # Exibe o total de cada ativo e seu preço atual
-    print("Total de ativos combinados (Binance + BNB Wallet) e preços atuais:")
+    # Calcula o valor total da carteira e armazena os detalhes dos ativos disponíveis
+    portfolio_value = 0.0
+    asset_details = []
+
     for asset_name, total_quantity in combined_assets.items():
         current_price = binance_service.get_current_price(asset_name)
-        if current_price is not None:
-            print(
-                f"{asset_name.upper()}: Quantidade: {total_quantity:.8f}, Preço Atual: ${current_price:.2f}"
+        if current_price is not None:  # Exibe apenas se o preço estiver disponível
+            asset_value = total_quantity * current_price
+            portfolio_value += asset_value
+            asset_details.append(
+                {
+                    "name": asset_name.upper(),
+                    "quantity": total_quantity,
+                    "price": current_price,
+                    "value": asset_value,
+                }
             )
-        else:
+
+    # Calcula o percentual de cada ativo e organiza do maior para o menor
+    if portfolio_value > 0:
+        for asset in asset_details:
+            asset["percentage"] = (asset["value"] / portfolio_value) * 100
+        asset_details.sort(key=lambda x: x["percentage"], reverse=True)
+
+        # Exibe o total de cada ativo com o percentual na carteira
+        print("Distribuição de Ativos na Carteira (do maior para o menor):")
+        for asset in asset_details:
             print(
-                f"{asset_name.upper()}: Quantidade: {total_quantity:.8f}, Preço Atual: Não disponível"
+                f"{asset['name']}: Quantidade: {asset['quantity']:.8f}, "
+                f"Preço Atual: ${asset['price']:.2f}, "
+                f"Valor: ${asset['value']:.2f}, "
+                f"Percentual da Carteira: {asset['percentage']:.2f}%"
             )
+    else:
+        print("Nenhum valor disponível na carteira.")
 
 
 if __name__ == "__main__":

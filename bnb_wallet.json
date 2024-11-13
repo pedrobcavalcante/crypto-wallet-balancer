@@ -1,0 +1,7 @@
+{
+  "bnb_wallet": {
+    "1": { "token_name": "bnb", "quantity": 0.00053376 },
+    "2": { "token_name": "btc", "quantity": 0.11672992 },
+    "3": { "token_name": "eth", "quantity": 2.99979039 }
+  }
+}

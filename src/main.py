@@ -9,6 +9,9 @@ def main():
     bnb_wallet_db = BNBWalletDBManager()
     db_manager = DBManager()
 
+    # Define a diferença percentual máxima permitida (3%)
+    max_percentage_difference = 3.0
+
     # Busca os ativos diretamente da Binance
     binance_assets = binance_service.get_account_assets()
 
@@ -57,16 +60,6 @@ def main():
             asset["percentage"] = (asset["value"] / portfolio_value) * 100
         asset_details.sort(key=lambda x: x["percentage"], reverse=True)
 
-        # Exibe o total de cada ativo com o percentual na carteira
-        print("Distribuição de Ativos na Carteira (do maior para o menor):")
-        for asset in asset_details:
-            print(
-                f"{asset['name']}: Quantidade: {asset['quantity']:.8f}, "
-                f"Preço Atual: ${asset['price']:.2f}, "
-                f"Valor: ${asset['value']:.2f}, "
-                f"Percentual da Carteira: {asset['percentage']:.2f}%"
-            )
-
         # Agora, buscamos os percentuais salvos no db.json
         saved_assets = db_manager.get_all_assets()
         saved_asset_dict = {
@@ -75,18 +68,36 @@ def main():
 
         # Calcula a diferença percentual para cada ativo
         print("\nDiferença Percentual entre a Carteira Atual e o Salvo no db.json:")
+
         for asset in asset_details:
             asset_name = asset["name"].lower()
             if asset_name in saved_asset_dict:
                 saved_percentage = saved_asset_dict[asset_name]
                 current_percentage = asset["percentage"]
                 difference = current_percentage - saved_percentage
+
+                # Exibe a diferença e as informações de venda ou compra
+                print(f"\n{asset['name']}:")
                 print(
-                    f"{asset['name']}: "
-                    f"Percentual Atual: {current_percentage:.2f}%, "
-                    f"Percentual Salvo: {saved_percentage:.2f}%, "
-                    f"Diferença: {difference:.2f}%"
+                    f"Quantidade na carteira Binance: {asset['quantity']:.8f}, Preço Atual: ${asset['price']:.2f}, Percentual Atual: {current_percentage:.2f}%"
                 )
+                print(
+                    f"Quantidade na carteira teórica (db.json): {saved_asset_dict[asset_name]:.2f}%, Percentual Teórico: {saved_percentage:.2f}%"
+                )
+                print(f"Diferença Percentual: {difference:.2f}%")
+
+                # Verifica se a diferença é maior que 3% ou menor que -3% e exibe a recomendação
+                if difference > max_percentage_difference:
+                    print(
+                        f"**Hora de Vender**: Diferença de {difference:.2f}% maior que {max_percentage_difference}%.\n"
+                    )
+                elif difference < -max_percentage_difference:
+                    print(
+                        f"**Hora de Comprar**: Diferença de {difference:.2f}% menor que {-max_percentage_difference}%.\n"
+                    )
+                else:
+                    print("A diferença está dentro dos limites permitidos.\n")
+
             else:
                 print(f"{asset['name']}: Não encontrado no db.json.")
 

@@ -60,10 +60,10 @@ def main():
             asset["percentage"] = (asset["value"] / portfolio_value) * 100
         asset_details.sort(key=lambda x: x["percentage"], reverse=True)
 
-        # Agora, buscamos os percentuais salvos no db.json
+        # Agora, buscamos os percentuais e o preço médio dos ativos salvos no db.json
         saved_assets = db_manager.get_all_assets()
         saved_asset_dict = {
-            asset["asset_name"].lower(): asset["percentage"] for asset in saved_assets
+            asset["asset_name"].lower(): asset for asset in saved_assets
         }
 
         # Calcula a diferença percentual para cada ativo
@@ -72,7 +72,8 @@ def main():
         for asset in asset_details:
             asset_name = asset["name"].lower()
             if asset_name in saved_asset_dict:
-                saved_percentage = saved_asset_dict[asset_name]
+                saved_asset = saved_asset_dict[asset_name]
+                saved_percentage = saved_asset["percentage"]
                 current_percentage = asset["percentage"]
                 difference = current_percentage - saved_percentage
 
@@ -82,7 +83,7 @@ def main():
                     f"Quantidade na carteira Binance: {asset['quantity']:.8f}, Preço Atual: ${asset['price']:.2f}, Percentual Atual: {current_percentage:.2f}%"
                 )
                 print(
-                    f"Quantidade na carteira teórica (db.json): {saved_asset_dict[asset_name]:.2f}%, Percentual Teórico: {saved_percentage:.2f}%"
+                    f"Quantidade na carteira teórica (db.json): {saved_asset['percentage']:.2f}%, Percentual Teórico: {saved_percentage:.2f}%"
                 )
                 print(f"Diferença Percentual: {difference:.2f}%")
 
@@ -98,8 +99,26 @@ def main():
                 else:
                     print("A diferença está dentro dos limites permitidos.\n")
 
+                # Verifica o preço médio do ativo, se presente
+                if saved_asset["average_price"] is not None:
+                    if current_price > saved_asset["average_price"]:
+                        print(
+                            f"**Hora de Vender**: O preço atual de {asset['name']} é maior que o preço médio ({saved_asset['average_price']}).\n"
+                        )
+                    elif current_price < saved_asset["average_price"]:
+                        print(
+                            f"**Hora de Comprar**: O preço atual de {asset['name']} é menor que o preço médio ({saved_asset['average_price']}).\n"
+                        )
+                else:
+                    print(
+                        f"Preço médio não disponível para {asset['name']}. Não será tomada ação.\n"
+                    )
+
             else:
                 print(f"{asset['name']}: Não encontrado no db.json.")
+                print(
+                    f"**Hora de Vender**: Ativo não encontrado no db.json. Verifique a discrepância!\n"
+                )
 
     else:
         print("Nenhum valor disponível na carteira.")

@@ -1,1 +1,70 @@
-{"assets": {"1": {"asset_name": "BTC", "points": 60, "average_price": null, "percentage": 36.36363636363637}, "2": {"asset_name": "ETH", "points": 70, "average_price": null, "percentage": 42.42424242424242}, "3": {"asset_name": "BNB", "points": 2, "average_price": null, "percentage": 1.2121212121212122}, "4": {"asset_name": "USDT", "points": 14, "average_price": null, "percentage": 8.484848484848486}, "6": {"asset_name": "FET", "points": 3, "average_price": null, "percentage": 1.8181818181818181}, "9": {"asset_name": "SOL", "points": 5, "average_price": null, "percentage": 3.0303030303030303}, "10": {"asset_name": "DOT", "points": 1, "average_price": null, "percentage": 0.6060606060606061}, "13": {"asset_name": "NEAR", "points": 2, "average_price": null, "percentage": 1.2121212121212122}, "15": {"asset_name": "INJ", "points": 2, "average_price": null, "percentage": 1.2121212121212122}, "16": {"asset_name": "PENDLE", "points": 3, "average_price": null, "percentage": 1.8181818181818181}, "25": {"asset_name": "RENDER", "points": 3, "average_price": null, "percentage": 1.8181818181818181}}}
+{
+  "assets": {
+    "1": {
+      "asset_name": "BTC",
+      "points": 60,
+      "average_price": null,
+      "percentage": 36.36363636363637
+    },
+    "2": {
+      "asset_name": "ETH",
+      "points": 70,
+      "average_price": null,
+      "percentage": 42.42424242424242
+    },
+    "3": {
+      "asset_name": "BNB",
+      "points": 2,
+      "average_price": null,
+      "percentage": 1.2121212121212122
+    },
+    "4": {
+      "asset_name": "USDT",
+      "points": 14,
+      "average_price": null,
+      "percentage": 8.484848484848486
+    },
+    "6": {
+      "asset_name": "FET",
+      "points": 3,
+      "average_price": null,
+      "percentage": 1.8181818181818181
+    },
+    "9": {
+      "asset_name": "SOL",
+      "points": 5,
+      "average_price": null,
+      "percentage": 3.0303030303030303
+    },
+    "10": {
+      "asset_name": "DOT",
+      "points": 1,
+      "average_price": null,
+      "percentage": 0.6060606060606061
+    },
+    "13": {
+      "asset_name": "NEAR",
+      "points": 2,
+      "average_price": null,
+      "percentage": 1.2121212121212122
+    },
+    "15": {
+      "asset_name": "INJ",
+      "points": 2,
+      "average_price": null,
+      "percentage": 1.2121212121212122
+    },
+    "16": {
+      "asset_name": "PENDLE",
+      "points": 3,
+      "average_price": null,
+      "percentage": 1.8181818181818181
+    },
+    "25": {
+      "asset_name": "RENDER",
+      "points": 3,
+      "average_price": null,
+      "percentage": 1.8181818181818181
+    }
+  }
+}

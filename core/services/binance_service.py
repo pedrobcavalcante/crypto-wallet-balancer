@@ -20,10 +20,31 @@ class BinanceService:
     def _get_headers(self):
         return {"X-MBX-APIKEY": self.api_key}
 
+    def _get_server_time(self):
+        """
+        Obtém o tempo atual do servidor da Binance para sincronizar o timestamp.
+        """
+        url = self.base_url + "/api/v3/time"
+        response = requests.get(url)
+        data = response.json()
+
+        if "serverTime" in data:
+            return data["serverTime"]
+        else:
+            raise Exception("Não foi possível obter o tempo do servidor da Binance.")
+
     def _make_request(self, endpoint, params=None):
+        """
+        Realiza a requisição para a API da Binance, com o timestamp sincronizado.
+        """
         url = self.base_url + endpoint
         params = params or {}
-        params["timestamp"] = int(time.time() * 1000) - 1000
+
+        # Sincroniza o timestamp com o servidor
+        server_time = self._get_server_time()
+        params["timestamp"] = server_time
+
+        # Assinatura
         params["signature"] = create_signature(params, self.api_secret)
 
         response = requests.get(url, headers=self._get_headers(), params=params)

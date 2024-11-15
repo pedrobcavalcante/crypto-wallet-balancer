@@ -1,12 +1,14 @@
 from config import get_config
-from core.services.binance_service import BinanceService
+from core.services.binance_private_service import BinancePrivateService
+from core.services.binance_public_service import BinancePublicService
 from core.database.bnb_wallet_db_manager import BNBWalletDBManager
 from core.database.db_manager import DBManager
 
 
 def main():
     # Inicializa os serviços e gerenciadores de banco de dados
-    binance_service = BinanceService()
+    public_service = BinancePublicService()
+    private_service = BinancePrivateService()
     bnb_wallet_db = BNBWalletDBManager()
     db_manager = DBManager()
 
@@ -14,11 +16,11 @@ def main():
     max_percentage_difference = get_config()["max_percentage_difference"]
 
     # Busca os ativos diretamente da Binance
-    binance_assets = binance_service.get_account_assets()
+    binance_assets = private_service.get_account_assets()
 
     # Converte os ativos da Binance para um dicionário {asset_name: quantidade}
     binance_asset_dict = {
-        asset.asset_name.lower(): float(asset.free) for asset in binance_assets
+        asset["asset"].lower(): float(asset["free"]) for asset in binance_assets
     }
 
     # Busca os ativos na carteira BNB
@@ -37,13 +39,19 @@ def main():
         else:
             combined_assets[token_name] = quantity
 
-    # Calcula o valor total da carteira e armazena os detalhes dos ativos disponíveis
-    portfolio_value = 0.0
+    # Obtém os preços de todos os ativos da Binance
+    all_prices = public_service.get_current_prices()
+
+    # Filtra os ativos da sua conta e calcula o valor total
     asset_details = []
+    portfolio_value = 0.0
 
     for asset_name, total_quantity in combined_assets.items():
-        current_price = binance_service.get_current_price(asset_name)
-        if current_price is not None:  # Exibe apenas se o preço estiver disponível
+        symbol = (
+            asset_name.upper() + "USDT"
+        )  # Considerando que os preços são retornados em relação ao USDT
+        if symbol in all_prices:
+            current_price = all_prices[symbol]
             asset_value = total_quantity * current_price
             portfolio_value += asset_value
             asset_details.append(
@@ -102,11 +110,11 @@ def main():
 
                 # Verifica o preço médio do ativo, se presente
                 if saved_asset["average_price"] is not None:
-                    if current_price > saved_asset["average_price"]:
+                    if asset["price"] > saved_asset["average_price"]:
                         print(
                             f"**Hora de Vender**: O preço atual de {asset['name']} é maior que o preço médio ({saved_asset['average_price']}).\n"
                         )
-                    elif current_price < saved_asset["average_price"]:
+                    elif asset["price"] < saved_asset["average_price"]:
                         print(
                             f"**Hora de Comprar**: O preço atual de {asset['name']} é menor que o preço médio ({saved_asset['average_price']}).\n"
                         )
@@ -118,7 +126,7 @@ def main():
             else:
                 print(f"{asset['name']}: Não encontrado no db.json.")
                 print(
-                    f"**Hora de Vender**: Ativo não encontrado no db.json. Verifique a discrepância!\n"
+                    "**Hora de Vender**: Ativo não encontrado no db.json. Verifique a discrepância!\n"
                 )
 
     else:

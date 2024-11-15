@@ -15,11 +15,6 @@ class BinanceBaseService:
         params = params or {}
         headers = headers or {}
 
-        # Log para depuração
-        print(f"URL: {url}")
-        print(f"Params: {params}")
-        print(f"Headers: {headers}")
-
         response = requests.get(url, params=params, headers=headers)
         if response.status_code == 200:
             return response.json()

@@ -55,3 +55,31 @@ class BinancePrivateService(BinanceBaseService):
             return []
         except Exception as e:
             raise Exception(f"Erro ao obter ativos da conta: {e}") from e
+
+    def place_buy_order(self, symbol, quantity, price):
+        """
+        Simula uma ordem de compra.
+        """
+        if not symbol or not quantity or not price:
+            raise ValueError("Parâmetros inválidos para a ordem de compra.")
+
+        print("\n--- Ordem de Compra ---")
+        print(f"Ativo: {symbol}")
+        print(f"Quantidade: {quantity}")
+        print(f"Preço: {price}")
+        print("Tipo de Ordem: LIMIT (Simulada)")
+        print("----------------------\n")
+
+    def place_sell_order(self, symbol, quantity, price):
+        """
+        Simula uma ordem de venda.
+        """
+        if not symbol or not quantity or not price:
+            raise ValueError("Parâmetros inválidos para a ordem de venda.")
+
+        print("\n--- Ordem de Venda ---")
+        print(f"Ativo: {symbol}")
+        print(f"Quantidade: {quantity}")
+        print(f"Preço: {price}")
+        print("Tipo de Ordem: LIMIT (Simulada)")
+        print("----------------------\n")

@@ -105,3 +105,19 @@ class DBManager:
                     percentage=calculated_percentage,
                 )
         return atualizar_banco
+
+    def update_average_price(self, asset_name: str, new_average_price: float) -> None:
+        """
+        Atualiza o preço médio de um ativo.
+
+        Args:
+            asset_name (str): Nome do ativo.
+            new_average_price (float): Novo preço médio do ativo.
+        """
+        asset = self.assets_table.get(Query().asset_name == asset_name)
+        if asset:
+            self.save_asset(
+                asset_name=asset_name,
+                points=asset["points"],
+                average_price=round(new_average_price, 4),
+            )

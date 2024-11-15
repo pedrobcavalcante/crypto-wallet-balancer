@@ -10,6 +10,7 @@ def get_config():
     return {
         "api_key": os.getenv("BINANCE_API_KEY"),
         "api_secret": os.getenv("BINANCE_API_SECRET"),
+        "telegram_bot_token": os.getenv("TELEGRAM_BOT_TOKEN"),
         "base_url": "https://api.binance.com",
-        "max_percentage_difference": 3.0,
+        "max_percentage_difference": 1.0,
     }

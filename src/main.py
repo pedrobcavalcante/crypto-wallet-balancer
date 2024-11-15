@@ -1,4 +1,5 @@
 import logging
+import time
 
 from config import get_config
 from core.services.binance_private_service import BinancePrivateService
@@ -66,4 +67,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    while True:
+        try:
+            main()
+            time.sleep(1)  # Aguarda 1 segundo antes de repetir
+        except KeyboardInterrupt:
+            logger.info("Execução interrompida pelo usuário.")
+            break
+        except Exception as e:
+            logger.error(f"Erro durante a execução: {e}")

@@ -1,3 +1,4 @@
+from core.services.telegram_notifier import TelegramNotifier
 from src.config import get_config
 from .binance_base_service import BinanceBaseService
 from core.utils.crypto_utils import create_signature
@@ -7,6 +8,7 @@ class BinancePrivateService(BinanceBaseService):
     def __init__(self):
         super().__init__()
         config = get_config()
+        self.telegram_notifier = TelegramNotifier(config["telegram_bot_token"])
         self.api_key = config["api_key"]
         self.api_secret = config["api_secret"]
         if not self.api_key or not self.api_secret:
@@ -70,6 +72,9 @@ class BinancePrivateService(BinanceBaseService):
         print("Tipo de Ordem: LIMIT (Simulada)")
         print("----------------------\n")
 
+        message = f"Ordem de compra enviada: {symbol} - {quantity} - {price}"
+        self.telegram_notifier.send_message(message, "65244254")
+
     def place_sell_order(self, symbol, quantity, price):
         """
         Simula uma ordem de venda.
@@ -83,3 +88,6 @@ class BinancePrivateService(BinanceBaseService):
         print(f"Preço: {price}")
         print("Tipo de Ordem: LIMIT (Simulada)")
         print("----------------------\n")
+
+        message = f"Ordem de venda enviada: {symbol} - {quantity} - {price}"
+        self.telegram_notifier.send_message(message, "65244254")

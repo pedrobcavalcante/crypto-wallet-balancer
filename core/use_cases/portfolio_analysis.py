@@ -1,4 +1,11 @@
 import logging
+from typing import List, Tuple, Dict
+
+from core.database.bnb_wallet_db_manager import BNBWalletDBManager
+from core.database.db_manager import DBManager
+from core.services.binance_private_service import BinancePrivateService
+from core.services.binance_public_service import BinancePublicService
+from core.use_cases.average_price_calculator import AveragePriceCalculator
 
 logger = logging.getLogger(__name__)
 
@@ -6,11 +13,11 @@ logger = logging.getLogger(__name__)
 class PortfolioAnalysis:
     def __init__(
         self,
-        public_service,
-        private_service,
-        bnb_wallet_db,
-        db_manager,
-        max_percentage_difference,
+        public_service: BinancePublicService,
+        private_service: BinancePrivateService,
+        bnb_wallet_db: BNBWalletDBManager,
+        db_manager: DBManager,
+        max_percentage_difference: float,
     ):
         self.public_service = public_service
         self.private_service = private_service
@@ -18,7 +25,7 @@ class PortfolioAnalysis:
         self.db_manager = db_manager
         self.max_percentage_difference = max_percentage_difference
 
-    def get_combined_assets(self):
+    def get_combined_assets(self) -> Dict[str, float]:
         logger.info("Buscando ativos na Binance...")
         binance_assets = self.private_service.get_account_assets()
         binance_asset_dict = {
@@ -39,7 +46,9 @@ class PortfolioAnalysis:
         logger.debug(f"Ativos combinados: {combined_assets}")
         return combined_assets
 
-    def calculate_portfolio_details(self, combined_assets):
+    def calculate_portfolio_details(
+        self, combined_assets: Dict[str, float]
+    ) -> Tuple[List[Dict[str, float]], float]:
         logger.info("Obtendo preços atuais da Binance...")
         all_prices = self.public_service.get_current_prices()
         portfolio_value = 0.0
@@ -69,11 +78,13 @@ class PortfolioAnalysis:
         logger.debug(f"Detalhes dos ativos: {asset_details}")
         return asset_details, portfolio_value
 
-    def analyze_differences(self, asset_details):
+    def analyze_differences(
+        self, asset_details: List[Dict[str, float]]
+    ) -> List[Dict[str, float]]:
         logger.info("Analisando diferenças percentuais...")
         saved_assets = self.db_manager.get_all_assets()
         saved_asset_dict = {
-            asset["asset_name"].lower(): asset for asset in saved_assets
+            asset_data["asset_name"].lower(): asset_data for asset_data in saved_assets
         }
 
         recommendations = []
@@ -96,16 +107,29 @@ class PortfolioAnalysis:
                 if difference > self.max_percentage_difference:
                     recommendation["action"] = "sell"
 
-                    # Calcula a quantidade a vender com base na diferença percentual
-                    sell_quantity = (difference / 100) * asset["quantity"]
-                    self.place_sell_order(asset["name"], sell_quantity, asset["price"])
+                    # Verifica se o preço de venda é maior que o preço médio
+                    if asset["price"] > saved_asset["average_price"]:
+                        sell_quantity = (difference / 100) * asset["quantity"]
+                        self.place_sell_order(
+                            asset["name"], sell_quantity, asset["price"]
+                        )
+                    else:
+                        logger.warning(
+                            f"Preço de venda de {asset['name']} (${asset['price']:.2f}) é menor ou igual ao preço médio (${saved_asset['average_price']:.2f}). Ordem de venda não enviada."
+                        )
 
                 elif difference < -self.max_percentage_difference:
                     recommendation["action"] = "buy"
 
                     # Calcula a quantidade a comprar com base na diferença percentual
-                    buy_quantity = (abs(difference) / 100) * saved_asset["quantity"]
-                    self.place_buy_order(asset["name"], buy_quantity, asset["price"])
+                    buy_quantity = (abs(difference) / 100) * saved_asset["points"]
+                    self.place_buy_order(
+                        asset["name"],
+                        buy_quantity,
+                        asset["price"],
+                        saved_asset["average_price"],
+                        asset["quantity"],
+                    )
                 else:
                     recommendation["action"] = "hold"
 
@@ -123,12 +147,30 @@ class PortfolioAnalysis:
 
         return recommendations
 
-    def place_buy_order(self, symbol, quantity, price):
+    def place_buy_order(
+        self, symbol, quantity, price, average_price, quantidade_atual_do_ativo
+    ):
         """
-        Envia uma ordem de compra usando o serviço private_service.
+        Atualiza o preço médio antes de comprar e envia a ordem.
         """
-        logger.info(f"Preparando ordem de compra para {symbol}.")
+        logger.info(f"Atualizando preço médio antes de comprar {symbol}.")
+
+        # Atualiza o preço médio
+        calculator = AveragePriceCalculator(self.db_manager)
         try:
+            new_average_price = calculator.calculate_new_average_price(
+                asset_name=symbol,
+                order_price=price,
+                order_quantity=quantity,
+                average_price=average_price,
+                quantidade_atual_do_ativo=quantidade_atual_do_ativo,
+            )
+            logger.info(
+                f"Preço médio atualizado para {symbol}: ${new_average_price:.2f}."
+            )
+
+            # Envia a ordem de compra
+
             order_response = self.private_service.place_buy_order(
                 symbol, quantity, price
             )
@@ -136,7 +178,7 @@ class PortfolioAnalysis:
         except Exception as e:
             logger.error(f"Erro ao executar ordem de compra: {e}")
 
-    def place_sell_order(self, symbol, quantity, price):
+    def place_sell_order(self, symbol: str, quantity: float, price: float):
         """
         Envia uma ordem de venda usando o serviço private_service.
         """

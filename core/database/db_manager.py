@@ -34,10 +34,15 @@ class DBManager:
         """
         Retorna todos os ativos armazenados no banco de dados, corrigindo os percentuais se necessário.
         """
+        # Carrega todos os ativos da tabela
         assets = self.assets_table.all()
 
         # Verifica se há discrepâncias nos percentuais e os corrige
-        self._correct_percentages(assets)
+        atualizar_dados = self._correct_percentages(assets)
+
+        # Recarrega os ativos para garantir que estamos retornando os dados mais recentes
+        if atualizar_dados:
+            assets = self.assets_table.all()
 
         return assets
 
@@ -74,13 +79,12 @@ class DBManager:
 
         return assets_with_percentages
 
-    def _correct_percentages(self, assets):
+    def _correct_percentages(self, assets: list[dict]) -> bool:
         """
         Verifica se os percentuais dos ativos estão corretos. Se não estiverem, os corrige.
         """
+        atualizar_banco = False
         total_points = sum(asset["points"] for asset in assets)
-        if total_points == 0:
-            return
 
         for asset in assets:
             calculated_percentage = (asset["points"] / total_points) * 100
@@ -88,6 +92,8 @@ class DBManager:
                 "percentage" not in asset
                 or asset["percentage"] != calculated_percentage
             ):
+                if not atualizar_banco:
+                    atualizar_banco = True
                 # Se a discrepância for encontrada, atualiza o percentual no banco de dados
                 print(
                     f"Discrepância encontrada para o ativo {asset['asset_name']}. Corrigindo..."
@@ -98,3 +104,4 @@ class DBManager:
                     average_price=asset["average_price"],
                     percentage=calculated_percentage,
                 )
+        return atualizar_banco

@@ -1,3 +1,4 @@
+from config import get_config
 from core.services.binance_service import BinanceService
 from core.database.bnb_wallet_db_manager import BNBWalletDBManager
 from core.database.db_manager import DBManager
@@ -10,7 +11,7 @@ def main():
     db_manager = DBManager()
 
     # Define a diferença percentual máxima permitida (3%)
-    max_percentage_difference = 3.0
+    max_percentage_difference = get_config()["max_percentage_difference"]
 
     # Busca os ativos diretamente da Binance
     binance_assets = binance_service.get_account_assets()

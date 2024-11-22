@@ -105,8 +105,6 @@ class BinancePrivateService(BinanceBaseService):
         # Chama o método genérico para enviar a ordem de compra
         self._send_order(symbol, "BUY", round(quantity, 8), price)
 
-        print("Ordem de compra enviada com sucesso!")
-
     def place_sell_order(self, symbol, quantity, price):
         """
         Simula uma ordem de venda utilizando a API da Binance.
@@ -123,4 +121,3 @@ class BinancePrivateService(BinanceBaseService):
 
         # Chama o método genérico para enviar a ordem de venda
         self._send_order(symbol, "SELL", round(quantity, 8), price)
-        print("Ordem de venda enviada com sucesso!")

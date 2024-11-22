@@ -147,105 +147,148 @@ class PortfolioAnalysis:
             Optional[Dict[str, Any]]: Recommendation dictionary if an action is determined, otherwise None.
         """
         asset_name = asset["name"].lower()
+
         if asset_name in saved_asset_dict:
             saved_asset = saved_asset_dict[asset_name]
-            saved_percentage = saved_asset["percentage"]
-            current_percentage = asset["percentage"]
-            difference = current_percentage - saved_percentage
+            recommendation = self._create_recommendation(asset, saved_asset)
 
-            recommendation = {
-                "name": asset["name"],
-                "current_percentage": current_percentage,
-                "saved_percentage": saved_percentage,
-                "difference": difference,
-            }
-
-            if difference > self.max_percentage_difference:
-                recommendation["action"] = "sell"
-
-                # Ajusta o tamanho da ordem com base no filtro LOT_SIZE
-                lot_size_filter = self._get_lot_size_filter(
-                    asset["name"], exchange_info
+            if recommendation["difference"] > self.max_percentage_difference:
+                self._handle_sell_recommendation(asset, recommendation, exchange_info)
+            elif recommendation["difference"] < -self.max_percentage_difference:
+                self._handle_buy_recommendation(
+                    asset, saved_asset, recommendation, exchange_info
                 )
-                sell_quantity = max(
-                    (difference / 100) * asset["quantity"],
-                    float(lot_size_filter["minQty"]),
-                )
-                sell_quantity = self._adjust_quantity(sell_quantity, lot_size_filter)
-
-                if sell_quantity >= float(lot_size_filter["minQty"]):
-                    self.place_sell_order(asset["name"], sell_quantity, asset["price"])
-                else:
-                    logger.warning(
-                        f"Quantidade ajustada ({sell_quantity}) é menor que o mínimo permitido."
-                    )
-
-            elif difference < -self.max_percentage_difference:
-                recommendation["action"] = "buy"
-
-                # Calcula a quantidade a comprar com base no filtro LOT_SIZE
-                lot_size_filter = self._get_lot_size_filter(
-                    asset["name"], exchange_info
-                )
-                buy_quantity = max(
-                    (abs(difference) / 100) * saved_asset["points"],
-                    float(lot_size_filter["minQty"]),
-                )
-                buy_quantity = self._adjust_quantity(buy_quantity, lot_size_filter)
-
-                if buy_quantity >= float(lot_size_filter["minQty"]):
-                    self.place_buy_order(
-                        asset["name"],
-                        buy_quantity,
-                        asset["price"],
-                        saved_asset["average_price"],
-                        asset["quantity"],
-                    )
-                else:
-                    logger.warning(
-                        f"Quantidade ajustada ({buy_quantity}) é menor que o mínimo permitido."
-                    )
-
             else:
                 recommendation["action"] = "hold"
 
             logger.debug(f"Recomendação para {asset['name']}: {recommendation}")
             return recommendation
-        else:
-            logger.warning(f"{asset['name']}: Não encontrado no banco de dados.")
-            logger.info(f"Mandando vender todo o ativo: {asset['name']}.")
+
+        # Asset not found in saved data, sell all
+        return self._handle_missing_asset(asset, exchange_info)
+
+    def _create_recommendation(
+        self, asset: Dict[str, float], saved_asset: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Create a recommendation dictionary based on the asset and saved data.
+
+        Args:
+            asset (Dict[str, float]): Current asset details.
+            saved_asset (Dict[str, Any]): Saved asset details.
+
+        Returns:
+            Dict[str, Any]: Recommendation dictionary.
+        """
+        saved_percentage = saved_asset["percentage"]
+        current_percentage = asset["percentage"]
+        difference = current_percentage - saved_percentage
+
+        return {
+            "name": asset["name"],
+            "current_percentage": current_percentage,
+            "saved_percentage": saved_percentage,
+            "difference": difference,
+        }
+
+    def _handle_sell_recommendation(
+        self,
+        asset: Dict[str, float],
+        recommendation: Dict[str, Any],
+        exchange_info: Dict[str, Any],
+    ):
+        """
+        Trata a lógica de recomendação de venda, usando o valor mínimo permitido (minQty).
+
+        Args:
+            asset (Dict[str, float]): Detalhes do ativo atual.
+            recommendation (Dict[str, Any]): Dicionário de recomendação.
+            exchange_info (Dict[str, Any]): Informações da Binance com filtros de mercado.
+        """
+        recommendation["action"] = "sell"
+        self.place_sell_order(asset["name"], asset["price"], exchange_info)
+
+    def _handle_buy_recommendation(
+        self,
+        asset: Dict[str, float],
+        saved_asset: Dict[str, Any],
+        recommendation: Dict[str, Any],
+        exchange_info: Dict[str, Any],
+    ):
+        """
+        Trata a lógica de recomendação de compra, usando o valor mínimo permitido (minQty).
+
+        Args:
+            asset (Dict[str, float]): Detalhes do ativo atual.
+            saved_asset (Dict[str, Any]): Detalhes do ativo salvo.
+            recommendation (Dict[str, Any]): Dicionário de recomendação.
+            exchange_info (Dict[str, Any]): Informações da Binance com filtros de mercado.
+        """
+        recommendation["action"] = "buy"
+        self.place_buy_order(asset["name"], asset["price"], exchange_info)
+
+    def _handle_missing_asset(
+        self, asset: Dict[str, float], exchange_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Handle the case where an asset is not found in the saved data.
+
+        Args:
+            asset (Dict[str, float]): Current asset details.
+            exchange_info (Dict[str, Any]): Binance exchange info with market filters.
+
+        Returns:
+            Dict[str, Any]: Recommendation to sell the minimum allowed quantity of the asset.
+        """
+        logger.warning(f"{asset['name']}: Não encontrado no banco de dados.")
+        logger.info(
+            f"Mandando vender o mínimo permitido para o ativo: {asset['name']}."
+        )
+
+        # Obter o valor mínimo permitido (minQty)
+        try:
+            lot_size_filter = self._get_lot_size_filter(asset["name"], exchange_info)
+            min_quantity = float(lot_size_filter["minQty"])
+
+            # Enviar a ordem de venda com minQty
             self.place_sell_order(
                 symbol=asset["name"],
-                quantity=asset["quantity"],
                 price=asset["price"],
+                exchange_info=exchange_info,
             )
 
-            recommendation = {
+            return {
                 "name": asset["name"],
-                "action": "sell_all",
-                "message": "Ativo não encontrado no banco de dados. Vendido totalmente.",
+                "action": "sell_min",
+                "message": f"Ativo não encontrado no banco de dados. Vendido o mínimo permitido ({min_quantity}).",
             }
-            return recommendation
+        except ValueError as e:
+            logger.error(f"Erro ao obter o filtro LOT_SIZE para {asset['name']}: {e}")
+            return {
+                "name": asset["name"],
+                "action": "error",
+                "message": "Não foi possível determinar o minQty para o ativo.",
+            }
 
     def _get_lot_size_filter(
         self, symbol: str, exchange_info: Dict[str, Any]
     ) -> Dict[str, str]:
         """
-        Retrieve the LOT_SIZE filter for a given symbol from the exchange info.
+        Retorna o filtro LOT_SIZE para um determinado par de moedas.
 
         Args:
-            symbol (str): Symbol of the asset.
-            exchange_info (Dict[str, Any]): Exchange info containing market filters.
+            symbol (str): Par de moedas.
+            exchange_info (Dict[str, Any]): Informações da Binance com filtros de mercado.
 
         Returns:
-            Dict[str, str]: LOT_SIZE filter details.
+            Dict[str, str]: Detalhes do filtro LOT_SIZE.
         """
         for market in exchange_info["symbols"]:
             if market["symbol"] == symbol + "USDT":
                 for filter_data in market["filters"]:
                     if filter_data["filterType"] == "LOT_SIZE":
                         return filter_data
-        raise ValueError(f"LOT_SIZE filter not found for symbol: {symbol}")
+        raise ValueError(f"LOT_SIZE filter não encontrado para o símbolo: {symbol}")
 
     def _adjust_quantity(
         self, quantity: float, lot_size_filter: Dict[str, str]
@@ -325,28 +368,73 @@ class PortfolioAnalysis:
         logger.info(f"Preço médio atualizado para {symbol}: ${new_average_price:.2f}.")
         return new_average_price
 
+    def _validate_min_notional(
+        self, symbol: str, quantity: float, price: float, exchange_info: Dict[str, Any]
+    ) -> bool:
+        """
+        Valida se o valor notional da ordem atende ao mínimo permitido.
+
+        Args:
+            symbol (str): Par de moedas no formato baseAsset + quoteAsset (ex: ETHUSDT).
+            quantity (float): Quantidade da ordem.
+            price (float): Preço unitário do ativo.
+            exchange_info (Dict[str, Any]): Informações da Binance com filtros de mercado.
+
+        Returns:
+            bool: True se o valor notional for válido, False caso contrário.
+        """
+        logger.debug(f"Validando notional para o símbolo: {symbol}")
+        symbol = symbol + "USDT"
+        # Busca o mercado específico no exchange_info
+        market = next(
+            (m for m in exchange_info["symbols"] if m["symbol"] == symbol), None
+        )
+        if not market:
+            raise ValueError(
+                f"Par de negociação {symbol} não encontrado no exchange_info."
+            )
+
+        # Busca o filtro NOTIONAL
+        notional_filter = next(
+            (f for f in market["filters"] if f["filterType"] == "NOTIONAL"), None
+        )
+        if not notional_filter:
+            raise ValueError(f"NOTIONAL filter não encontrado para o símbolo: {symbol}")
+
+        # Valida o valor notional
+        min_notional = float(notional_filter["minNotional"])
+        notional = quantity * price
+        logger.debug(f"Notional calculado: {notional}, mínimo exigido: {min_notional}")
+
+        return notional >= min_notional
+
     def place_buy_order(
         self,
         symbol: str,
-        quantity: float,
         price: float,
-        average_price: float,
-        quantidade_atual_do_ativo: float,
+        exchange_info: Dict[str, Any],
     ):
         """
-        Update average price before buying and send the buy order.
+        Envia uma ordem de compra ajustando para atender ao filtro MIN_NOTIONAL.
 
         Args:
-            symbol (str): Symbol of the asset.
-            quantity (float): Quantity to buy.
-            price (float): Price to buy at.
-            average_price (float): Current average price of the asset.
-            quantidade_atual_do_ativo (float): Current quantity of the asset.
+            symbol (str): Par de moedas.
+            price (float): Preço do ativo.
+            exchange_info (Dict[str, Any]): Informações da Binance com filtros de mercado.
         """
-        logger.info(f"Atualizando preço médio antes de comprar {symbol}.")
         try:
-            self.update_average_price(
-                symbol, price, quantity, average_price, quantidade_atual_do_ativo
+            lot_size_filter = self._get_lot_size_filter(symbol, exchange_info)
+            min_quantity = float(lot_size_filter["minQty"])
+            quantity = min_quantity
+
+            # Ajusta a quantidade para atender ao filtro MIN_NOTIONAL
+            while not self._validate_min_notional(
+                symbol, quantity, price, exchange_info
+            ):
+                quantity += float(lot_size_filter["stepSize"])
+
+            logger.info(
+                f"Enviando ordem de compra para {symbol} com quantidade: {quantity}."
             )
             order_response = self.private_service.place_buy_order(
                 symbol, quantity, price
@@ -355,17 +443,34 @@ class PortfolioAnalysis:
         except Exception as e:
             logger.error(f"Erro ao executar ordem de compra: {e}")
 
-    def place_sell_order(self, symbol: str, quantity: float, price: float):
+    def place_sell_order(
+        self,
+        symbol: str,
+        price: float,
+        exchange_info: Dict[str, Any],
+    ):
         """
-        Send a sell order using the private service.
+        Envia uma ordem de venda ajustando para atender ao filtro MIN_NOTIONAL.
 
         Args:
-            symbol (str): Symbol of the asset.
-            quantity (float): Quantity to sell.
-            price (float): Price to sell at.
+            symbol (str): Par de moedas.
+            price (float): Preço do ativo.
+            exchange_info (Dict[str, Any]): Informações da Binance com filtros de mercado.
         """
-        logger.info(f"Preparando ordem de venda para {symbol}.")
         try:
+            lot_size_filter = self._get_lot_size_filter(symbol, exchange_info)
+            min_quantity = float(lot_size_filter["minQty"])
+            quantity = min_quantity
+
+            # Ajusta a quantidade para atender ao filtro MIN_NOTIONAL
+            while not self._validate_min_notional(
+                symbol, quantity, price, exchange_info
+            ):
+                quantity += float(lot_size_filter["stepSize"])
+
+            logger.info(
+                f"Enviando ordem de venda para {symbol} com quantidade: {quantity}."
+            )
             order_response = self.private_service.place_sell_order(
                 symbol, quantity, price
             )

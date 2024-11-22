@@ -26,23 +26,23 @@ class PortfolioAnalysis:
         self.max_percentage_difference = max_percentage_difference
 
     def get_combined_assets(self) -> Dict[str, float]:
-        binance_assets = self.get_binance_assets()
-        bnb_assets = self.get_bnb_wallet_assets()
+        binance_assets = self._get_binance_assets()
+        bnb_assets = self._get_bnb_wallet_assets()
 
         combined_assets = {**binance_assets, **bnb_assets}
-        self.combine_asset_quantities(bnb_assets, combined_assets)
+        self._combine_asset_quantities(bnb_assets, combined_assets)
 
         logger.debug(f"Ativos combinados: {combined_assets}")
         return combined_assets
 
-    def get_binance_assets(self) -> Dict[str, float]:
+    def _get_binance_assets(self) -> Dict[str, float]:
         logger.info("Buscando ativos na Binance...")
         binance_assets = self.private_service.get_account_assets()
         return {
             asset["asset"].lower(): float(asset["free"]) for asset in binance_assets
         }
 
-    def get_bnb_wallet_assets(self) -> Dict[str, float]:
+    def _get_bnb_wallet_assets(self) -> Dict[str, float]:
         logger.info("Buscando ativos na carteira BNB...")
         bnb_assets = self.bnb_wallet_db.get_all_token_balances()
         return {
@@ -50,7 +50,7 @@ class PortfolioAnalysis:
             for token in bnb_assets
         }
 
-    def combine_asset_quantities(self, bnb_assets, combined_assets):
+    def _combine_asset_quantities(self, bnb_assets, combined_assets):
         for token_name, quantity in bnb_assets.items():
             combined_assets[token_name] = combined_assets.get(token_name, 0) + quantity
 
@@ -63,17 +63,17 @@ class PortfolioAnalysis:
 
         logger.info("Calculando detalhes do portfólio...")
         for asset_name, total_quantity in combined_assets.items():
-            self.add_asset_details(
+            self._add_asset_details(
                 asset_name, total_quantity, all_prices, asset_details
             )
 
         if portfolio_value > 0:
-            self.calculate_percentage(asset_details, portfolio_value)
+            self._calculate_percentage(asset_details, portfolio_value)
 
         logger.debug(f"Detalhes dos ativos: {asset_details}")
         return asset_details, portfolio_value
 
-    def add_asset_details(self, asset_name, total_quantity, all_prices, asset_details):
+    def _add_asset_details(self, asset_name, total_quantity, all_prices, asset_details):
         symbol = f"{asset_name.upper()}USDT"
         if symbol in all_prices:
             current_price = all_prices[symbol]
@@ -88,7 +88,7 @@ class PortfolioAnalysis:
                 }
             )
 
-    def calculate_percentage(self, asset_details, portfolio_value):
+    def _calculate_percentage(self, asset_details, portfolio_value):
         for asset in asset_details:
             asset["percentage"] = (asset["value"] / portfolio_value) * 100
         asset_details.sort(key=lambda x: x["percentage"], reverse=True)
@@ -104,41 +104,41 @@ class PortfolioAnalysis:
         recommendations = []
 
         for asset in asset_details:
-            recommendations += self.analyze_asset_difference(asset, saved_asset_dict)
+            recommendations += self._analyze_asset_difference(asset, saved_asset_dict)
 
         return recommendations
 
-    def analyze_asset_difference(self, asset, saved_asset_dict):
+    def _analyze_asset_difference(self, asset, saved_asset_dict):
         asset_name = asset["name"].lower()
         recommendations = []
 
         if asset_name in saved_asset_dict:
             recommendations.append(
-                self.compare_asset_with_saved(asset, saved_asset_dict[asset_name])
+                self._compare_asset_with_saved(asset, saved_asset_dict[asset_name])
             )
         else:
-            recommendations.append(self.handle_asset_not_found(asset))
+            recommendations.append(self._handle_asset_not_found(asset))
 
         return recommendations
 
-    def compare_asset_with_saved(self, asset, saved_asset):
-        difference = self.calculate_difference(asset, saved_asset)
-        recommendation = self.create_recommendation(asset, saved_asset, difference)
+    def _compare_asset_with_saved(self, asset, saved_asset):
+        difference = self._calculate_difference(asset, saved_asset)
+        recommendation = self._create_recommendation(asset, saved_asset, difference)
 
         if recommendation.get("action"):
-            self.handle_recommendation_action(
+            self._handle_recommendation_action(
                 recommendation, asset, saved_asset, difference
             )
 
         logger.debug(f"Recomendação para {asset['name']}: {recommendation}")
         return recommendation
 
-    def calculate_difference(self, asset, saved_asset):
+    def _calculate_difference(self, asset, saved_asset):
         saved_percentage = saved_asset["percentage"]
         current_percentage = asset["percentage"]
         return current_percentage - saved_percentage
 
-    def create_recommendation(self, asset, saved_asset, difference):
+    def _create_recommendation(self, asset, saved_asset, difference):
         recommendation = {
             "name": asset["name"],
             "current_percentage": asset["percentage"],
@@ -155,26 +155,26 @@ class PortfolioAnalysis:
 
         return recommendation
 
-    def handle_recommendation_action(
+    def _handle_recommendation_action(
         self, recommendation, asset, saved_asset, difference
     ):
         if recommendation["action"] == "sell":
-            self.handle_sell_action(asset, saved_asset, difference)
+            self._handle_sell_action(asset, saved_asset, difference)
         elif recommendation["action"] == "buy":
-            self.handle_buy_action(asset, saved_asset, difference)
+            self._handle_buy_action(asset, saved_asset, difference)
 
-    def handle_sell_action(self, asset, saved_asset, difference):
+    def _handle_sell_action(self, asset, saved_asset, difference):
         if asset["price"] > saved_asset["average_price"]:
             sell_quantity = (difference / 100) * asset["quantity"]
-            self.place_sell_order(asset["name"], sell_quantity, asset["price"])
+            self._place_sell_order(asset["name"], sell_quantity, asset["price"])
         else:
             logger.warning(
                 f"Preço de venda de {asset['name']} (${asset['price']:.2f}) é menor ou igual ao preço médio (${saved_asset['average_price']:.2f}). Ordem de venda não enviada."
             )
 
-    def handle_buy_action(self, asset, saved_asset, difference):
+    def _handle_buy_action(self, asset, saved_asset, difference):
         buy_quantity = (abs(difference) / 100) * saved_asset["points"]
-        self.place_buy_order(
+        self._place_buy_order(
             asset["name"],
             buy_quantity,
             asset["price"],
@@ -182,10 +182,10 @@ class PortfolioAnalysis:
             asset["quantity"],
         )
 
-    def handle_asset_not_found(self, asset):
+    def _handle_asset_not_found(self, asset):
         logger.warning(f"{asset['name']}: Não encontrado no banco de dados.")
         logger.info(f"Mandando vender todo o ativo: {asset['name']}.")
-        self.place_sell_order(
+        self._place_sell_order(
             symbol=asset["name"],
             quantity=asset["quantity"],
             price=asset["price"],
@@ -197,7 +197,7 @@ class PortfolioAnalysis:
             "message": "Ativo não encontrado no banco de dados. Vendido totalmente.",
         }
 
-    def place_buy_order(
+    def _place_buy_order(
         self, symbol, quantity, price, average_price, quantidade_atual_do_ativo
     ):
         logger.info(f"Atualizando preço médio antes de comprar {symbol}.")
@@ -221,7 +221,7 @@ class PortfolioAnalysis:
         except Exception as e:
             logger.error(f"Erro ao executar ordem de compra: {e}")
 
-    def place_sell_order(self, symbol: str, quantity: float, price: float):
+    def _place_sell_order(self, symbol: str, quantity: float, price: float):
         logger.info(f"Preparando ordem de venda para {symbol}.")
         try:
             order_response = self.private_service.place_sell_order(

@@ -136,14 +136,25 @@ class PortfolioAnalysis:
                 logger.debug(f"Recomendação para {asset['name']}: {recommendation}")
                 recommendations.append(recommendation)
             else:
+                # Ordem de venda para ativos ausentes no banco
+                logger.warning(f"{asset['name']}: Não encontrado no banco de dados.")
+                logger.warning(f"{asset['name']}: Asset not found in database.")
+
+                # Vender todo o ativo
+                logger.info(f"Mandando vender todo o ativo: {asset['name']}.")
+                self.place_sell_order(
+                    symbol=asset["name"],
+                    quantity=asset["quantity"],
+                    price=asset["price"],
+                )
+
                 recommendations.append(
                     {
                         "name": asset["name"],
-                        "action": "not found",
-                        "message": "Asset not found in database.",
+                        "action": "sell_all",
+                        "message": "Ativo não encontrado no banco de dados. Vendido totalmente.",
                     }
                 )
-                logger.warning(f"{asset['name']}: Não encontrado no banco de dados.")
 
         return recommendations
 

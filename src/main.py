@@ -33,50 +33,52 @@ def main():
         db_manager,
         config["max_percentage_difference"],
     )
-
-    # Busca os ativos combinados
-    combined_assets = analysis.get_combined_assets()
-    logger.info("Ativos combinados obtidos com sucesso:")
-    for name, quantity in combined_assets.items():
-        logger.info(f"{name}: {quantity}")
-
-    # Calcula detalhes do portfólio
-    asset_details, portfolio_value = analysis.calculate_portfolio_details(
-        combined_assets
-    )
-    logger.info(f"Valor total do portfólio: ${portfolio_value:.2f}")
-    logger.info("Detalhes dos ativos:")
-    for asset in asset_details:
-        logger.info(
-            f"{asset['name']}: {asset['quantity']} @ ${asset['price']:.2f} = ${asset['value']:.2f}"
-        )
-
-    # Analisa diferenças e recomendações
-    if portfolio_value > 0:
-        recommendations = analysis.analyze_differences(asset_details)
-        logger.info("Recomendações de ajuste:")
-        for rec in recommendations:
-            if rec["action"] == "not found":
-                logger.warning(f"{rec['name']}: {rec['message']}")
-            elif rec["action"] == "sell_all":
-                logger.info(f"{rec['name']}: VENDIDO TOTALMENTE ({rec['message']})")
-            else:
-                # Garante que a chave 'difference' está presente antes de usar
-                difference = rec.get("difference", 0.0)  # Valor padrão 0.0
-                logger.info(
-                    f"{rec['name']}: {rec['action'].upper()} (Diferença: {difference:.2f}%)"
-                )
-    else:
-        logger.warning("Nenhum valor disponível na carteira.")
-
-
-if __name__ == "__main__":
     while True:
         try:
-            main()
-            time.sleep(1)  # Aguarda 1 segundo antes de repetir
+            # Busca os ativos combinados
+            combined_assets = analysis.get_combined_assets()
+            logger.info("Ativos combinados obtidos com sucesso:")
+            for name, quantity in combined_assets.items():
+                logger.info(f"{name}: {quantity}")
+
+            # Calcula detalhes do portfólio
+            asset_details, portfolio_value = analysis.calculate_portfolio_details(
+                combined_assets
+            )
+            logger.info(f"Valor total do portfólio: ${portfolio_value:.2f}")
+            logger.info("Detalhes dos ativos:")
+            for asset in asset_details:
+                logger.info(
+                    f"{asset['name']}: {asset['quantity']} @ ${asset['price']:.2f} = ${asset['value']:.2f}"
+                )
+
+            # Analisa diferenças e recomendações
+            if portfolio_value > 0:
+                recommendations = analysis.analyze_differences(asset_details)
+                logger.info("Recomendações de ajuste:")
+                for rec in recommendations:
+                    if rec["action"] == "not found":
+                        logger.warning(f"{rec['name']}: {rec['message']}")
+                    elif rec["action"] == "sell_all":
+                        logger.info(
+                            f"{rec['name']}: VENDIDO TOTALMENTE ({rec['message']})"
+                        )
+                    else:
+                        # Garante que a chave 'difference' está presente antes de usar
+                        difference = rec.get("difference", 0.0)  # Valor padrão 0.0
+                        logger.info(
+                            f"{rec['name']}: {rec['action'].upper()} (Diferença: {difference:.2f}%)"
+                        )
+            else:
+                logger.warning("Nenhum valor disponível na carteira.")
         except KeyboardInterrupt:
             logger.info("Execução interrompida pelo usuário.")
             break
         except Exception as e:
             logger.error(f"Erro durante a execução: {e}")
+        finally:
+            time.sleep(1)
+
+
+if __name__ == "__main__":
+    main()

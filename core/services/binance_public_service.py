@@ -31,7 +31,7 @@ class BinancePublicService(BinanceBaseService):
         Obtém os preços de todos os ativos da Binance usando o endpoint público.
         """
         endpoint = "/api/v3/ticker/price"
-        data = self._make_request(endpoint)
+        data = self._make_request(endpoint, request_type="GET")
         if data:
             return {price["symbol"]: float(price["price"]) for price in data}
         else:

@@ -20,7 +20,7 @@ class BinancePrivateService(BinanceBaseService):
         """
         return {"X-MBX-APIKEY": self.api_key}
 
-    def _make_request(self, endpoint, params=None):
+    def _make_request(self, endpoint, params=None, request_type: str = "GET"):
         """
         Realiza uma requisição autenticada para a API da Binance.
         """
@@ -35,7 +35,9 @@ class BinancePrivateService(BinanceBaseService):
         params["signature"] = create_signature(params, self.api_secret)
 
         # Faz a requisição usando o método da classe base
-        return super()._make_request(endpoint, params=params, headers=headers)
+        return super()._make_request(
+            endpoint, request_type=request_type, params=params, headers=headers
+        )
 
     def get_account_assets(self):
         """
@@ -58,9 +60,37 @@ class BinancePrivateService(BinanceBaseService):
         except Exception as e:
             raise Exception(f"Erro ao obter ativos da conta: {e}") from e
 
+    def _send_order(self, symbol, side, quantity, price):
+        """
+        Método genérico para enviar ordens de teste (compra ou venda) para a Binance.
+        """
+        # Parâmetros comuns para a ordem de teste
+        params = {
+            "symbol": symbol + "USDT",
+            "side": side,
+            "type": "LIMIT",
+            "timeInForce": "GTC",  # Ordem válida até cancelamento
+            "quantity": quantity,
+            "price": price,
+        }
+
+        try:
+            # Envia a ordem de teste via requisição HTTP
+            endpoint = "/api/v3/order/test"
+            self._make_request(endpoint, params, request_type="POST")
+
+            print(f"Ordem de teste {side.lower()} enviada com sucesso!")
+
+            # Envia a notificação via Telegram
+            message = f"Ordem de {side.lower()} simulada enviada: {symbol} - {quantity} - {price}"
+            self.telegram_notifier.send_message(message, "65244254")
+
+        except Exception as e:
+            print(f"Erro ao enviar ordem de teste: {e}")
+
     def place_buy_order(self, symbol, quantity, price):
         """
-        Simula uma ordem de compra.
+        Simula uma ordem de compra utilizando a API da Binance.
         """
         if not symbol or not quantity or not price:
             raise ValueError("Parâmetros inválidos para a ordem de compra.")
@@ -72,12 +102,12 @@ class BinancePrivateService(BinanceBaseService):
         print("Tipo de Ordem: LIMIT (Simulada)")
         print("----------------------\n")
 
-        message = f"Ordem de compra enviada: {symbol} - {quantity} - {price}"
-        self.telegram_notifier.send_message(message, "65244254")
+        # Chama o método genérico para enviar a ordem de compra
+        self._send_order(symbol, "BUY", round(quantity, 8), price)
 
     def place_sell_order(self, symbol, quantity, price):
         """
-        Simula uma ordem de venda.
+        Simula uma ordem de venda utilizando a API da Binance.
         """
         if not symbol or not quantity or not price:
             raise ValueError("Parâmetros inválidos para a ordem de venda.")
@@ -89,5 +119,5 @@ class BinancePrivateService(BinanceBaseService):
         print("Tipo de Ordem: LIMIT (Simulada)")
         print("----------------------\n")
 
-        message = f"Ordem de venda enviada: {symbol} - {quantity} - {price}"
-        self.telegram_notifier.send_message(message, "65244254")
+        # Chama o método genérico para enviar a ordem de venda
+        self._send_order(symbol, "SELL", round(quantity, 8), price)

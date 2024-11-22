@@ -37,7 +37,7 @@ def main():
     while True:
         try:
             # Busca os ativos combinados
-            combined_assets = analysis.get_combined_assets()
+            combined_assets = analysis.analyze_portfolio()
             logger.info("Ativos combinados obtidos com sucesso:")
             for name, quantity in combined_assets.items():
                 logger.info(f"{name}: {quantity}")

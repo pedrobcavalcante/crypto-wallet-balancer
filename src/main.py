@@ -50,7 +50,9 @@ def main():
 
             # Analisa diferenças e recomendações
             if portfolio_value > 0:
-                recommendations = analysis.analyze_differences(asset_details)
+                recommendations = analysis.analyze_differences(
+                    asset_details, exchange_info
+                )
                 _print_recommendations(recommendations)
             else:
                 logger.warning("Nenhum valor disponível na carteira.")

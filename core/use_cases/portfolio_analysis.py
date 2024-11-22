@@ -133,6 +133,7 @@ class PortfolioAnalysis:
         self,
         asset: Dict[str, float],
         saved_asset_dict: Dict[str, Dict],
+        exchange_info: Dict[str, Any],
     ) -> Optional[Dict[str, Any]]:
         """
         Analyze the difference between current asset percentage and saved percentage, and determine action.
@@ -140,6 +141,7 @@ class PortfolioAnalysis:
         Args:
             asset (Dict[str, float]): Current asset details.
             saved_asset_dict (Dict[str, Dict]): Dictionary of saved asset data.
+            exchange_info (Dict[str, Any]): Exchange info containing market filters.
 
         Returns:
             Optional[Dict[str, Any]]: Recommendation dictionary if an action is determined, otherwise None.
@@ -161,27 +163,49 @@ class PortfolioAnalysis:
             if difference > self.max_percentage_difference:
                 recommendation["action"] = "sell"
 
-                if asset["price"] > saved_asset["average_price"]:
-                    sell_quantity = (difference / 100) * asset["quantity"]
+                # Ajusta o tamanho da ordem com base no filtro LOT_SIZE
+                lot_size_filter = self._get_lot_size_filter(
+                    asset["name"], exchange_info
+                )
+                sell_quantity = max(
+                    (difference / 100) * asset["quantity"],
+                    float(lot_size_filter["minQty"]),
+                )
+                sell_quantity = self._adjust_quantity(sell_quantity, lot_size_filter)
+
+                if sell_quantity >= float(lot_size_filter["minQty"]):
                     self.place_sell_order(asset["name"], sell_quantity, asset["price"])
                 else:
                     logger.warning(
-                        f"Preço de venda de {asset['name']} (${asset['price']:.2f}) "
-                        f"é menor ou igual ao preço médio (${saved_asset['average_price']:.2f}). "
-                        f"Ordem de venda não enviada."
+                        f"Quantidade ajustada ({sell_quantity}) é menor que o mínimo permitido."
                     )
 
             elif difference < -self.max_percentage_difference:
                 recommendation["action"] = "buy"
 
-                buy_quantity = (abs(difference) / 100) * saved_asset["points"]
-                self.place_buy_order(
-                    asset["name"],
-                    buy_quantity,
-                    asset["price"],
-                    saved_asset["average_price"],
-                    asset["quantity"],
+                # Calcula a quantidade a comprar com base no filtro LOT_SIZE
+                lot_size_filter = self._get_lot_size_filter(
+                    asset["name"], exchange_info
                 )
+                buy_quantity = max(
+                    (abs(difference) / 100) * saved_asset["points"],
+                    float(lot_size_filter["minQty"]),
+                )
+                buy_quantity = self._adjust_quantity(buy_quantity, lot_size_filter)
+
+                if buy_quantity >= float(lot_size_filter["minQty"]):
+                    self.place_buy_order(
+                        asset["name"],
+                        buy_quantity,
+                        asset["price"],
+                        saved_asset["average_price"],
+                        asset["quantity"],
+                    )
+                else:
+                    logger.warning(
+                        f"Quantidade ajustada ({buy_quantity}) é menor que o mínimo permitido."
+                    )
+
             else:
                 recommendation["action"] = "hold"
 
@@ -203,14 +227,51 @@ class PortfolioAnalysis:
             }
             return recommendation
 
+    def _get_lot_size_filter(
+        self, symbol: str, exchange_info: Dict[str, Any]
+    ) -> Dict[str, str]:
+        """
+        Retrieve the LOT_SIZE filter for a given symbol from the exchange info.
+
+        Args:
+            symbol (str): Symbol of the asset.
+            exchange_info (Dict[str, Any]): Exchange info containing market filters.
+
+        Returns:
+            Dict[str, str]: LOT_SIZE filter details.
+        """
+        for market in exchange_info["symbols"]:
+            if market["symbol"] == symbol + "USDT":
+                for filter_data in market["filters"]:
+                    if filter_data["filterType"] == "LOT_SIZE":
+                        return filter_data
+        raise ValueError(f"LOT_SIZE filter not found for symbol: {symbol}")
+
+    def _adjust_quantity(
+        self, quantity: float, lot_size_filter: Dict[str, str]
+    ) -> float:
+        """
+        Adjust the quantity to comply with the LOT_SIZE filter.
+
+        Args:
+            quantity (float): Quantity to be adjusted.
+            lot_size_filter (Dict[str, str]): LOT_SIZE filter details.
+
+        Returns:
+            float: Adjusted quantity.
+        """
+        step_size = float(lot_size_filter["stepSize"])
+        return float(int(quantity / step_size) * step_size)
+
     def analyze_differences(
-        self, asset_details: List[Dict[str, float]]
+        self, asset_details: List[Dict[str, float]], exchange_info: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """
         Analyze differences between current portfolio and saved portfolio, and generate recommendations.
 
         Args:
             asset_details (List[Dict[str, float]]): List of current asset details.
+            exchange_info (Dict[str, Any]): Exchange info containing market filters.
 
         Returns:
             List[Dict[str, Any]]: List of recommendations for each asset.
@@ -224,7 +285,9 @@ class PortfolioAnalysis:
         recommendations = []
 
         for asset in asset_details:
-            recommendation = self.analyze_asset_difference(asset, saved_asset_dict)
+            recommendation = self.analyze_asset_difference(
+                asset, saved_asset_dict, exchange_info
+            )
             if recommendation:
                 recommendations.append(recommendation)
 

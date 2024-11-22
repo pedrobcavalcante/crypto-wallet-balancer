@@ -71,7 +71,7 @@ def _print_portfolio_details(asset_details, portfolio_value):
     logger.info("Detalhes dos ativos:")
     for asset in asset_details:
         logger.info(
-            f"{asset['name']}: {asset['quantity']} @ ${asset['price']:.2f} = ${asset['value']:.2f}"
+            f"Ativo: {asset['name']} - Quantidade atual: {asset['quantity']} Preço atual: ${asset['price']:.2f} Total em $: ${asset['value']:.2f}"
         )
 
 

@@ -88,7 +88,7 @@ class BinancePrivateService(BinanceBaseService):
         except Exception as e:
             print(f"Erro ao enviar ordem de teste: {e}")
 
-    def place_buy_order(self, symbol, quantity, price):
+    def place_buy_order(self, symbol: str, quantity: float, price: float):
         """
         Simula uma ordem de compra utilizando a API da Binance.
         """
@@ -105,7 +105,7 @@ class BinancePrivateService(BinanceBaseService):
         # Chama o método genérico para enviar a ordem de compra
         self._send_order(symbol, "BUY", round(quantity, 8), price)
 
-    def place_sell_order(self, symbol, quantity, price):
+    def place_sell_order(self, symbol: str, quantity: float, price: float):
         """
         Simula uma ordem de venda utilizando a API da Binance.
         """

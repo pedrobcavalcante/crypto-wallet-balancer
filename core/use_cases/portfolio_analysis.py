@@ -1,3 +1,4 @@
+from decimal import Decimal
 import logging
 from typing import List, Tuple, Dict, Optional, Any
 
@@ -206,7 +207,15 @@ class PortfolioAnalysis:
             exchange_info (Dict[str, Any]): Informações da Binance com filtros de mercado.
         """
         recommendation["action"] = "sell"
-        self.place_sell_order(asset["name"], asset["price"], exchange_info)
+
+        # Obtem o filtro LOT_SIZE para calcular a quantidade mínima
+        lot_size_filter = self._get_lot_size_filter(asset["name"], exchange_info)
+        min_quantity = float(lot_size_filter["minQty"])
+
+        # Chama o método place_sell_order com todos os argumentos necessários
+        self.place_sell_order(
+            asset["name"], min_quantity, asset["price"], exchange_info
+        )
 
     def _handle_buy_recommendation(
         self,
@@ -225,7 +234,13 @@ class PortfolioAnalysis:
             exchange_info (Dict[str, Any]): Informações da Binance com filtros de mercado.
         """
         recommendation["action"] = "buy"
-        self.place_buy_order(asset["name"], asset["price"], exchange_info)
+
+        # Obtem o filtro LOT_SIZE para calcular a quantidade mínima
+        lot_size_filter = self._get_lot_size_filter(asset["name"], exchange_info)
+        min_quantity = float(lot_size_filter["minQty"])
+
+        # Chama o método place_buy_order com todos os argumentos necessários
+        self.place_buy_order(asset["name"], min_quantity, asset["price"], exchange_info)
 
     def _handle_missing_asset(
         self, asset: Dict[str, float], exchange_info: Dict[str, Any]
@@ -409,71 +424,79 @@ class PortfolioAnalysis:
         return notional >= min_notional
 
     def place_buy_order(
-        self,
-        symbol: str,
-        price: float,
-        exchange_info: Dict[str, Any],
+        self, symbol: str, quantity: float, price: float, exchange_info: Dict[str, Any]
     ):
         """
-        Envia uma ordem de compra ajustando para atender ao filtro MIN_NOTIONAL.
+        Envia uma ordem de compra ajustada para uma quantidade válida com base no step_size.
 
         Args:
             symbol (str): Par de moedas.
-            price (float): Preço do ativo.
+            quantity (float): Quantidade inicial da ordem.
+            price (float): Preço unitário do ativo.
             exchange_info (Dict[str, Any]): Informações da Binance com filtros de mercado.
         """
         try:
+            # Busca o filtro LOT_SIZE para o par
             lot_size_filter = self._get_lot_size_filter(symbol, exchange_info)
-            min_quantity = float(lot_size_filter["minQty"])
-            quantity = min_quantity
+            step_size = float(lot_size_filter["stepSize"])
 
-            # Ajusta a quantidade para atender ao filtro MIN_NOTIONAL
-            while not self._validate_min_notional(
-                symbol, quantity, price, exchange_info
-            ):
-                quantity += float(lot_size_filter["stepSize"])
+            # Formata a quantidade com base no step_size
+            formatted_quantity = self._format_quantity(quantity, step_size)
 
             logger.info(
-                f"Enviando ordem de compra para {symbol} com quantidade: {quantity}."
+                f"Enviando ordem de compra: {symbol} - Quantidade: {formatted_quantity}, Preço: {price}"
             )
             order_response = self.private_service.place_buy_order(
-                symbol, quantity, price
+                symbol, float(formatted_quantity), price
             )
             logger.info(f"Ordem de compra executada: {order_response}")
         except Exception as e:
-            logger.error(f"Erro ao executar ordem de compra: {e}")
+            logger.error(f"Erro ao executar ordem de compra para {symbol}: {e}")
 
     def place_sell_order(
-        self,
-        symbol: str,
-        price: float,
-        exchange_info: Dict[str, Any],
+        self, symbol: str, quantity: float, price: float, exchange_info: Dict[str, Any]
     ):
         """
-        Envia uma ordem de venda ajustando para atender ao filtro MIN_NOTIONAL.
+        Envia uma ordem de venda ajustada para uma quantidade válida com base no step_size.
 
         Args:
             symbol (str): Par de moedas.
-            price (float): Preço do ativo.
+            quantity (float): Quantidade inicial da ordem.
+            price (float): Preço unitário do ativo.
             exchange_info (Dict[str, Any]): Informações da Binance com filtros de mercado.
         """
         try:
+            # Busca o filtro LOT_SIZE para o par
             lot_size_filter = self._get_lot_size_filter(symbol, exchange_info)
-            min_quantity = float(lot_size_filter["minQty"])
-            quantity = min_quantity
+            step_size = float(lot_size_filter["stepSize"])
 
-            # Ajusta a quantidade para atender ao filtro MIN_NOTIONAL
-            while not self._validate_min_notional(
-                symbol, quantity, price, exchange_info
-            ):
-                quantity += float(lot_size_filter["stepSize"])
+            # Formata a quantidade com base no step_size
+            formatted_quantity = self._format_quantity(quantity, step_size)
 
             logger.info(
-                f"Enviando ordem de venda para {symbol} com quantidade: {quantity}."
+                f"Enviando ordem de venda: {symbol} - Quantidade: {formatted_quantity}, Preço: {price}"
             )
             order_response = self.private_service.place_sell_order(
-                symbol, quantity, price
+                symbol, float(formatted_quantity), price
             )
             logger.info(f"Ordem de venda executada: {order_response}")
         except Exception as e:
-            logger.error(f"Erro ao executar ordem de venda: {e}")
+            logger.error(f"Erro ao executar ordem de venda para {symbol}: {e}")
+
+    def _format_quantity(self, quantity: float, step_size: float) -> str:
+        """
+        Formata a quantidade para um número decimal válido e compatível com a API Binance.
+
+        Args:
+            quantity (float): Quantidade a ser formatada.
+            step_size (float): Incremento permitido pelo filtro LOT_SIZE.
+
+        Returns:
+            str: Quantidade formatada como string no formato decimal.
+        """
+        # Calcula a precisão com base no step_size
+        precision = abs(Decimal(str(step_size)).as_tuple().exponent)
+
+        # Formata a quantidade com a precisão calculada
+        formatted_quantity = f"{quantity:.{precision}f}"
+        return formatted_quantity.rstrip("0").rstrip(".")

@@ -55,23 +55,16 @@ class PortfolioAnalysis:
     ):
         for recommendation in recommendations:
             action = recommendation.get("action")
-            symbol = recommendation["name"]
+            symbol_base = recommendation["name"]
+            symbol = symbol_base
             if not symbol.lower().endswith("usdt"):
                 symbol += "USDT"
             price = recommendation.get("price")
             quantity = recommendation.get("quantity")
 
-            if action == "buy":
+            if action in ["buy", "sell"]:
                 self.order_executor.place_order(
-                    action="buy",
-                    symbol=symbol,
-                    quantity=quantity,
-                    price=price,
-                    exchange_info=exchange_info,
-                )
-            elif action == "sell":
-                self.order_executor.place_order(
-                    action="sell",
+                    action=action,
                     symbol=symbol,
                     quantity=quantity,
                     price=price,
@@ -85,8 +78,8 @@ class PortfolioAnalysis:
                     price=price,
                     exchange_info=exchange_info,
                 )
-                logger.info(f"Executado venda total para {symbol}.")
+                logger.info(f"Executado venda total para {symbol_base}.")
             elif action == "hold":
-                logger.info(f"Mantendo posição para {symbol}.")
+                logger.info(f"Mantendo posição para {symbol_base}.")
             else:
-                logger.warning(f"Ação desconhecida para {symbol}: {action}")
+                logger.warning(f"Ação desconhecida para {symbol_base}: {action}")

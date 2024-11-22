@@ -33,29 +33,15 @@ def main():
         db_manager,
         config["max_percentage_difference"],
     )
-    exchange_info = public_service.get_exchange_info()
+
     while True:
         try:
             # Busca os ativos combinados
             combined_assets = analysis.analyze_portfolio()
             logger.info("Ativos combinados obtidos com sucesso:")
-            for name, quantity in combined_assets.items():
-                logger.info(f"{name}: {quantity}")
-
-            # Calcula detalhes do portfólio
-            asset_details, portfolio_value = analysis.calculate_portfolio_details(
-                combined_assets
-            )
-            _print_portfolio_details(asset_details, portfolio_value)
-
-            # Analisa diferenças e recomendações
-            if portfolio_value > 0:
-                recommendations = analysis.analyze_differences(
-                    asset_details, exchange_info
-                )
-                _print_recommendations(recommendations)
-            else:
-                logger.warning("Nenhum valor disponível na carteira.")
+            if combined_assets is not None:
+                for name, quantity in combined_assets.items():
+                    logger.info(f"{name}: {quantity}")
 
         except KeyboardInterrupt:
             logger.info("Execução interrompida pelo usuário.")

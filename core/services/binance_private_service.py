@@ -66,7 +66,7 @@ class BinancePrivateService(BinanceBaseService):
         """
         # Parâmetros comuns para a ordem de teste
         params = {
-            "symbol": symbol + "USDT",
+            "symbol": symbol,
             "side": side,
             "type": "LIMIT",
             "timeInForce": "GTC",  # Ordem válida até cancelamento
@@ -82,13 +82,13 @@ class BinancePrivateService(BinanceBaseService):
             print(f"Ordem de teste {side.lower()} enviada com sucesso!")
 
             # Envia a notificação via Telegram
-            message = f"Ordem de {side.lower()} simulada enviada: {symbol} - {quantity} - {price}"
-            self.telegram_notifier.send_message(message, "65244254")
+            # message = f"Ordem de {side.lower()} simulada enviada: {symbol} - {quantity} - {price}"
+            # self.telegram_notifier.send_message(message, "65244254")
 
         except Exception as e:
             print(f"Erro ao enviar ordem de teste: {e}")
 
-    def place_buy_order(self, symbol: str, quantity: float, price: float):
+    def place_buy_order(self, symbol: str, quantity: str, price: float):
         """
         Simula uma ordem de compra utilizando a API da Binance.
         """
@@ -103,9 +103,9 @@ class BinancePrivateService(BinanceBaseService):
         print("----------------------\n")
 
         # Chama o método genérico para enviar a ordem de compra
-        self._send_order(symbol, "BUY", round(quantity, 8), price)
+        self._send_order(symbol, "BUY", quantity, price)
 
-    def place_sell_order(self, symbol: str, quantity: float, price: float):
+    def place_sell_order(self, symbol: str, quantity: str, price: float):
         """
         Simula uma ordem de venda utilizando a API da Binance.
         """
@@ -120,4 +120,4 @@ class BinancePrivateService(BinanceBaseService):
         print("----------------------\n")
 
         # Chama o método genérico para enviar a ordem de venda
-        self._send_order(symbol, "SELL", round(quantity, 8), price)
+        self._send_order(symbol, "SELL", quantity, price)

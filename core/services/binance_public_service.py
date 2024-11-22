@@ -36,3 +36,13 @@ class BinancePublicService(BinanceBaseService):
             return {price["symbol"]: float(price["price"]) for price in data}
         else:
             return {}
+
+    def get_exchange_info(self):
+        """
+        Obtém as informações do par de negociação, incluindo restrições de quantidade e preço.
+        """
+        endpoint = "/api/v3/exchangeInfo"
+
+        data = self._make_request(endpoint, request_type="GET")
+
+        return data

@@ -52,29 +52,5 @@ def main():
             time.sleep(1)
 
 
-def _print_portfolio_details(asset_details, portfolio_value):
-    logger.info(f"Valor total do portfólio: ${portfolio_value:.2f}")
-    logger.info("Detalhes dos ativos:")
-    for asset in asset_details:
-        logger.info(
-            f"Ativo: {asset['name']} - Quantidade atual: {asset['quantity']} Preço atual: ${asset['price']:.2f} Total em $: ${asset['value']:.2f}"
-        )
-
-
-def _print_recommendations(recommendations):
-    logger.info("Recomendações de ajuste:")
-    for rec in recommendations:
-        if rec["action"] == "not found":
-            logger.warning(f"{rec['name']}: {rec['message']}")
-        elif rec["action"] == "sell_all":
-            logger.info(f"{rec['name']}: VENDIDO TOTALMENTE ({rec['message']})")
-        else:
-            # Garante que a chave 'difference' está presente antes de usar
-            difference = rec.get("difference", 0.0)  # Valor padrão 0.0
-            logger.info(
-                f"{rec['name']}: {rec['action'].upper()} (Diferença: {difference:.2f}%)"
-            )
-
-
 if __name__ == "__main__":
     main()

@@ -1,10 +1,10 @@
 import logging
 from typing import Any, Dict, List
 
+from core.database.crypto_assets_manager import CryptoAssetsManager
 from core.services.binance_public_service import BinancePublicService
 from core.services.binance_private_service import BinancePrivateService
-from core.database.db_manager import DBManager
-from core.database.bnb_wallet_db_manager import BNBWalletDBManager
+
 
 from core.use_cases.asset_analyzer import AssetAnalyzer
 from core.use_cases.portfolio_manager import PortfolioManager
@@ -18,13 +18,10 @@ class PortfolioAnalysis:
         self,
         public_service: BinancePublicService,
         private_service: BinancePrivateService,
-        bnb_wallet_db: BNBWalletDBManager,
-        db_manager: DBManager,
+        db_manager: CryptoAssetsManager,
         max_percentage_difference: float,
     ):
-        self.portfolio_manager = PortfolioManager(
-            public_service, private_service, bnb_wallet_db
-        )
+        self.portfolio_manager = PortfolioManager(public_service, private_service, db_manager)
         self.asset_analyzer = AssetAnalyzer(db_manager, max_percentage_difference)
         self.order_executor = OrderExecutor(private_service)
         self.public_service = public_service

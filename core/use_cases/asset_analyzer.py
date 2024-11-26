@@ -1,7 +1,8 @@
 import logging
 from typing import List, Dict, Any, Optional
 
-from core.database.db_manager import DBManager
+from core.database.crypto_assets_manager import CryptoAssetsManager
+
 
 logger = logging.getLogger(__name__)
 
@@ -9,10 +10,10 @@ logger = logging.getLogger(__name__)
 class AssetAnalyzer:
     def __init__(
         self,
-        db_manager: DBManager,
+        crypto_assets_manager: CryptoAssetsManager,
         max_percentage_difference: float,
     ):
-        self.db_manager = db_manager
+        self.db_manager = crypto_assets_manager
         self.max_percentage_difference = max_percentage_difference
 
     def analyze_differences(
@@ -23,7 +24,7 @@ class AssetAnalyzer:
         logger.info("Analisando diferenças percentuais...")
         saved_assets = self.db_manager.get_all_assets()
         saved_asset_dict = {
-            asset_data["asset_name"].lower(): asset_data for asset_data in saved_assets
+            asset_data["crypto"].lower(): asset_data for asset_data in saved_assets
         }
 
         recommendations = []
@@ -88,7 +89,7 @@ class AssetAnalyzer:
     def _create_recommendation(
         self, asset: Dict[str, float], saved_asset: Dict[str, Any]
     ) -> Dict[str, Any]:
-        saved_percentage = saved_asset["percentage"]
+        saved_percentage = saved_asset["percentual"]
         current_percentage = asset["percentage"]
         difference = current_percentage - saved_percentage
 

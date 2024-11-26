@@ -1,9 +1,9 @@
 import logging
 from typing import Dict, List, Tuple
 
+from core.database.crypto_assets_manager import CryptoAssetsManager
 from core.services.binance_private_service import BinancePrivateService
 from core.services.binance_public_service import BinancePublicService
-from core.database.bnb_wallet_db_manager import BNBWalletDBManager
 
 logger = logging.getLogger(__name__)
 
@@ -13,11 +13,11 @@ class PortfolioManager:
         self,
         public_service: BinancePublicService,
         private_service: BinancePrivateService,
-        bnb_wallet_db: BNBWalletDBManager,
+        crypto_assets_manager: CryptoAssetsManager,
     ):
         self.public_service = public_service
         self.private_service = private_service
-        self.bnb_wallet_db = bnb_wallet_db
+        self.crypto_assets_manager = crypto_assets_manager
 
     def get_combined_assets(self) -> Dict[str, float]:
         logger.info("Buscando ativos na Binance...")
@@ -27,12 +27,12 @@ class PortfolioManager:
         }
 
         logger.info("Buscando ativos na carteira BNB...")
-        bnb_assets = self.bnb_wallet_db.get_all_token_balances()
+        bnb_assets = self.crypto_assets_manager.get_all_assets()
         bnb_asset_dict = {
-            token["token_name"].lower(): float(token["quantity"])
+            token["crypto"].lower(): float(token["total_carteira"])
             for token in bnb_assets
+            if token["total_carteira"] is not None
         }
-
         combined_assets = binance_asset_dict.copy()
         for token_name, quantity in bnb_asset_dict.items():
             combined_assets[token_name] = combined_assets.get(token_name, 0) + quantity

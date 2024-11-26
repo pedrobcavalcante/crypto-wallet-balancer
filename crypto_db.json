@@ -4,63 +4,63 @@
       "crypto": "PENDLE",
       "percentual": 1.97,
       "pontos": 3.0,
-      "meta_dollar": 62328.0,
-      "meta_moeda": 112.1,
+      "meta_dollar": 60377.0,
+      "meta_moeda": 124.49,
       "total_carteira": null
     },
     "2": {
       "crypto": "LINK",
       "percentual": 0.66,
       "pontos": 1.0,
-      "meta_dollar": 20776.0,
-      "meta_moeda": 11.16,
+      "meta_dollar": 20126.0,
+      "meta_moeda": 12.16,
       "total_carteira": 0.0
     },
     "3": {
       "crypto": "BNB",
       "percentual": 1.32,
       "pontos": 2.0,
-      "meta_dollar": 41552.0,
-      "meta_moeda": 0.64,
+      "meta_dollar": 40251.0,
+      "meta_moeda": 0.65,
       "total_carteira": 0.000534
     },
     "4": {
       "crypto": "FET",
       "percentual": 1.97,
       "pontos": 3.0,
-      "meta_dollar": 62328.0,
-      "meta_moeda": 421.13,
+      "meta_dollar": 60377.0,
+      "meta_moeda": 450.58,
       "total_carteira": null
     },
     "5": {
       "crypto": "INJ",
       "percentual": 1.32,
       "pontos": 2.0,
-      "meta_dollar": 41552.0,
-      "meta_moeda": 14.33,
+      "meta_dollar": 40251.0,
+      "meta_moeda": 14.8,
       "total_carteira": null
     },
     "6": {
       "crypto": "ETH",
       "percentual": 46.05,
       "pontos": 70.0,
-      "meta_dollar": 14.5431,
-      "meta_moeda": 4.13,
+      "meta_dollar": 14.088,
+      "meta_moeda": 4.25,
       "total_carteira": 2.999617
     },
     "7": {
       "crypto": "RENDER",
       "percentual": 1.97,
       "pontos": 3.0,
-      "meta_dollar": 62328.0,
-      "meta_moeda": 78.4,
+      "meta_dollar": 60377.0,
+      "meta_moeda": 83.51,
       "total_carteira": null
     },
     "8": {
       "crypto": "BTC",
       "percentual": 39.47,
       "pontos": 60.0,
-      "meta_dollar": 12.46552,
+      "meta_dollar": 12.07543,
       "meta_moeda": 0.13,
       "total_carteira": 0.116729
     },
@@ -68,24 +68,24 @@
       "crypto": "NEAR",
       "percentual": 1.32,
       "pontos": 2.0,
-      "meta_dollar": 41552.0,
-      "meta_moeda": 61.83,
+      "meta_dollar": 40251.0,
+      "meta_moeda": 66.09,
       "total_carteira": null
     },
     "10": {
       "crypto": "DOT",
       "percentual": 0.66,
       "pontos": 1.0,
-      "meta_dollar": 20776.0,
-      "meta_moeda": 24.16,
+      "meta_dollar": 20126.0,
+      "meta_moeda": 25.74,
       "total_carteira": null
     },
     "11": {
       "crypto": "SOL",
       "percentual": 3.29,
       "pontos": 5.0,
-      "meta_dollar": 1.03879,
-      "meta_moeda": 4.25,
+      "meta_dollar": 1.00629,
+      "meta_moeda": 4.43,
       "total_carteira": null
     }
   }

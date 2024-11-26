@@ -8,6 +8,7 @@ from core.services.binance_private_service import BinancePrivateService
 from core.services.binance_public_service import BinancePublicService
 
 
+from core.use_cases.sync_crypto_data import sync_crypto_data
 from core.use_cases.portfolio_analysis import PortfolioAnalysis
 
 # Configuração do logger
@@ -23,7 +24,9 @@ def main():
     private_service = BinancePrivateService()
     db_manager = CryptoAssetsManager()
     config = get_config()
-
+    sync_crypto_data(
+        "https://docs.google.com/spreadsheets/d/1NOu_ysYqj9qk1ICZbMtrRhhZe-2sXa5Z4jjAGy4uNrM/edit?gid=0"
+    )
     logger.info("Iniciando análise de portfólio...")
 
     # Instancia o caso de uso
@@ -50,6 +53,7 @@ def main():
             logger.error(f"Erro durante a execução: {e}")
         finally:
             time.sleep(1)
+
 
 if __name__ == "__main__":
     main()

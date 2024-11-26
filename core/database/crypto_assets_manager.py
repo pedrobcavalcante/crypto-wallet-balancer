@@ -1,5 +1,6 @@
 from tinydb import TinyDB, Query
 
+
 class CryptoAssetsManager:
     def __init__(self, db_path="crypto_db.json"):
         """
@@ -26,3 +27,26 @@ class CryptoAssetsManager:
     def get_bnb_wallet_quantity(self):
         asset = self.get_asset_data("BNB")
         return asset.get("total_carteira", 0.0)
+
+    def save_crypto_asset(
+        self, crypto, percentual, pontos, meta_dollar, meta_moeda, total_carteira
+    ):
+        """
+        Salva ou atualiza os dados de um ativo no banco de dados.
+        """
+        CryptoAsset = Query()
+        existing_asset = self.crypto_table.get(CryptoAsset.crypto == crypto)
+
+        asset_data = {
+            "crypto": crypto,
+            "percentual": percentual,
+            "pontos": pontos,
+            "meta_dollar": meta_dollar,
+            "meta_moeda": meta_moeda,
+            "total_carteira": total_carteira,
+        }
+
+        if existing_asset:
+            self.crypto_table.update(asset_data, CryptoAsset.crypto == crypto)
+        else:
+            self.crypto_table.insert(asset_data)

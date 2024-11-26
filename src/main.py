@@ -52,7 +52,7 @@ def main():
         except Exception as e:
             logger.error(f"Erro durante a execução: {e}")
         finally:
-            time.sleep(1)
+            time.sleep(60)
 
 
 if __name__ == "__main__":

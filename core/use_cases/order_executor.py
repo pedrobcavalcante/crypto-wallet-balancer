@@ -1,8 +1,9 @@
 import logging
 from decimal import Decimal
 import math
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
+from config import get_config
 from core.services.binance_private_service import BinancePrivateService
 
 logger = logging.getLogger(__name__)
@@ -21,99 +22,58 @@ class OrderExecutor:
         exchange_info: Dict[str, Any],
     ):
         try:
-            # Obter filtros necessários
-            lot_size_filter = self._get_filter(symbol, exchange_info, "LOT_SIZE")
-            notional_filter = self._get_filter(symbol, exchange_info, "NOTIONAL")
-            price_filter = self._get_filter(
-                symbol, exchange_info, "PRICE_FILTER"
-            )  # Novo
-
-            # Calcular quantidades mínimas
-            min_qty = float(lot_size_filter["minQty"])
-            step_size = float(lot_size_filter["stepSize"])
-            min_notional = float(notional_filter["minNotional"])
-            max_notional = float(notional_filter.get("maxNotional", float("inf")))
-            tick_size = float(price_filter["tickSize"])  # Novo
-
-            # Quantidade mínima baseada em NOTIONAL
-            min_qty_notional = min_notional / price
-
-            # Escolher a quantidade que resulta em maior valor em USDT
-            if (min_qty_notional * price) > (min_qty * price):
-                chosen_quantity = min_qty_notional
-            else:
-                chosen_quantity = min_qty
-
-            # Ajustar a quantidade para respeitar o step_size
-            adjusted_quantity = self._adjust_quantity(chosen_quantity, step_size)
-
-            # Valor notional da ordem
-            notional_value = adjusted_quantity * price
-
-            # Verificar se o valor notional está abaixo de $5
-            if notional_value < 5:
-                logger.info(
-                    f"Valor notional da ordem ({notional_value:.2f}) é menor que $5. Ajustando para $5."
-                )
-                # Calcular nova quantidade para notional_value = $5
-                adjusted_quantity = 5 / price
-                # Ajustar a quantidade para respeitar o step_size
-                adjusted_quantity = self._adjust_quantity(adjusted_quantity, step_size)
-                # Recalcular o valor notional
-                notional_value = adjusted_quantity * price
-                logger.info(
-                    f"Nova quantidade ajustada: {adjusted_quantity}, Novo valor notional: {notional_value:.2f}"
-                )
-
-            # Verificar se o notional_value está dentro dos limites permitidos
-            if notional_value < min_notional:
-                logger.error(
-                    f"Valor notional da ordem ({notional_value:.2f}) abaixo do mínimo permitido para {symbol}: {min_notional}"
-                )
+            quantity_adjusted = self._adjust_price(price, quantity, symbol, action)
+            if not quantity_adjusted:
                 return
-            if notional_value > max_notional:
-                logger.error(
-                    f"Valor notional da ordem ({notional_value:.2f}) acima do máximo permitido para {symbol}: {max_notional}"
-                )
+            # Obter filtros
+            filters = self._get_filters(symbol, exchange_info)
+            if not filters:
                 return
+            # Formatar quantidade e preço
+            formatted_quantity = self._format_quantity(quantity_adjusted, filters["step_size"])
 
-            # Formatar a quantidade para a precisão correta
-            formatted_quantity = self._format_quantity(adjusted_quantity, step_size)
-
-            # Formatar o preço para a precisão correta
-            formatted_price = self._format_price(price, tick_size)  # Novo
-
-            # Verificar se a quantidade ajustada é válida
+            # Verificar quantidade válida
             if float(formatted_quantity) <= 0:
                 logger.error(
                     f"Quantidade ajustada inválida para {symbol}: {formatted_quantity}"
                 )
                 return
 
-            logger.info(
-                f"Enviando ordem de {action}: {symbol} - Quantidade: {formatted_quantity}, Preço: {formatted_price}"
-            )
-
-            if action == "buy":
-                order_response = self.private_service.place_buy_order(
-                    symbol,
-                    float(formatted_quantity),
-                    formatted_price,  # Usando o preço formatado
-                )
-            elif action == "sell":
-                order_response = self.private_service.place_sell_order(
-                    symbol,
-                    float(formatted_quantity),
-                    formatted_price,  # Usando o preço formatado
-                )
-            else:
-                logger.error(f"Ação desconhecida: {action}")
-                return
-
-            logger.info(f"Ordem executada: {order_response}")
+            # Enviar ordem
+            self._send_order(action, symbol, formatted_quantity, price)
 
         except Exception as e:
             logger.error(f"Erro ao executar ordem de {action} para {symbol}: {e}")
+
+    def _adjust_price(
+        self, price: float, quantity: float, symbol: str, action: str
+    ) -> Optional[float]:
+        min_order_value = get_config()["min_order_value"]
+        if price * quantity < min_order_value:
+            logger.info(
+                f"Ordem de {action} para {symbol} com valor total de {price * quantity:.2f} USDT "
+                f"é menor que o valor mínimo de {min_order_value:.2f} USDT. "
+                f"Ordem não foi executada."
+            )
+        else:
+            return min_order_value / price
+
+    def _send_order(self, action: str, symbol: str, quantity: str, price: str):
+        logger.info(
+            f"Enviando ordem de {action}: {symbol} - Quantidade: {quantity}, Preço: {price}"
+        )
+        if action == "buy":
+            response = self.private_service.place_buy_order(
+                symbol, float(quantity), price
+            )
+        elif action == "sell":
+            response = self.private_service.place_sell_order(
+                symbol, float(quantity), price
+            )
+        else:
+            logger.error(f"Ação desconhecida: {action}")
+            return
+        logger.info(f"Ordem executada: {response}")
 
     def _get_filter(
         self, symbol: str, exchange_info: Dict[str, Any], filter_type: str
@@ -127,15 +87,6 @@ class OrderExecutor:
             f"Filtro {filter_type} não encontrado para o símbolo: {symbol}"
         )
 
-    def _adjust_quantity(self, quantity: float, step_size: float) -> float:
-        """
-        Ajusta a quantidade para que seja múltipla de step_size.
-        """
-        precision = int(round(-math.log(step_size, 10), 0))
-        adjusted_quantity = math.floor(quantity / step_size) * step_size
-        adjusted_quantity = round(adjusted_quantity, precision)
-        return adjusted_quantity
-
     def _format_quantity(self, quantity: float, step_size: float) -> str:
         """
         Formata a quantidade para uma string com a precisão correta.
@@ -146,16 +97,4 @@ class OrderExecutor:
             formatted_quantity.rstrip("0").rstrip(".")
             if "." in formatted_quantity
             else formatted_quantity
-        )
-
-    def _format_price(self, price: float, tick_size: float) -> str:
-        """
-        Formata o preço para uma string com a precisão correta, evitando notação científica.
-        """
-        precision = abs(Decimal(str(tick_size)).as_tuple().exponent)
-        formatted_price = f"{price:.{precision}f}"
-        return (
-            formatted_price.rstrip("0").rstrip(".")
-            if "." in formatted_price
-            else formatted_price
         )

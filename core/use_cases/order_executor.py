@@ -1,17 +1,19 @@
 import logging
 from decimal import Decimal
-import math
 from typing import Dict, Any, Optional
 
 from config import get_config
+from core.database.crypto_assets_manager import CryptoAssetsManager
 from core.services.binance_private_service import BinancePrivateService
+from core.use_cases.update_average_price import atualizar_preco_medio
 
 logger = logging.getLogger(__name__)
 
 
 class OrderExecutor:
-    def __init__(self, private_service: BinancePrivateService):
-        self.private_service = private_service
+    def __init__(self, private_service: BinancePrivateService, crypto_assets_manager: CryptoAssetsManager = CryptoAssetsManager()):
+        self.private_service = private_service  
+        self.crypto_assets_manager = crypto_assets_manager
 
     def place_order(
         self,
@@ -43,7 +45,10 @@ class OrderExecutor:
 
             # Enviar ordem
             self._send_order(action, symbol, formatted_quantity, price)
-
+            if action == "buy":
+                atualizar_preco_medio(
+                    symbol.replace("USDT", ""), formatted_quantity, price, self.crypto_assets_manager
+                )
         except Exception as e:
             logger.error(f"Erro ao executar ordem de {action} para {symbol}: {e}")
 

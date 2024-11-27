@@ -15,6 +15,7 @@ def get_config():
         "min_order_value": float(os.getenv("MIN_ORDER_VALUE", 6.0)),
         "max_order_value": float(os.getenv("MAX_ORDER_VALUE", 10.0)),
         "max_percentage_difference": float(
-            os.getenv("MAX_PERCENTAGE_DIFFERENCE",0.0001)
+            os.getenv("MAX_PERCENTAGE_DIFFERENCE", 0.0001)
         ),
+        "planilha": os.getenv("PLANILHA"),
     }

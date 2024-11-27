@@ -21,10 +21,13 @@ class PortfolioAnalysis:
         db_manager: CryptoAssetsManager,
         max_percentage_difference: float,
     ):
-        self.portfolio_manager = PortfolioManager(public_service, private_service, db_manager)
+        self.portfolio_manager = PortfolioManager(
+            public_service, private_service, db_manager
+        )
         self.asset_analyzer = AssetAnalyzer(db_manager, max_percentage_difference)
         self.order_executor = OrderExecutor(private_service)
         self.public_service = public_service
+        self.db_manager = db_manager
 
     def analyze_portfolio(self):
         # Passo 1: Obter ativos combinados
@@ -67,6 +70,7 @@ class PortfolioAnalysis:
                     price=price,
                     exchange_info=exchange_info,
                 )
+
             elif action == "sell_all":
                 self.order_executor.place_order(
                     action="sell",

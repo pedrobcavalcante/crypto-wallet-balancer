@@ -26,7 +26,6 @@ def sync_crypto_data(sheet_url, db_path="crypto_db.json"):
             "Preço Médio",
             "Percentual",
             "Pontos",
-            "Meta($):",
             "meta Moeda",
             "Total (Carteira)",
         ]
@@ -36,35 +35,18 @@ def sync_crypto_data(sheet_url, db_path="crypto_db.json"):
         for _, row in filtered_table.iterrows():
             crypto = row["Crypto"]
             if isinstance(row["Crypto"], str):
-                if isinstance(row["Percentual"], str):
-                    percentual = float(row["Percentual"].strip("%").replace(",", "."))
-                else:
-                    percentual = row["Percentual"]
+                percentual = _parse_percentual(row["Percentual"])
                 pontos = float(row["Pontos"])
-                meta_dollar = float(re.sub(r"[^\d\.]", "", row["Meta($):"]))
-                if isinstance(row["meta Moeda"], str):
-                    meta_moeda = float(row["meta Moeda"].replace(",", "."))
-                else:
-                    meta_moeda = row["meta Moeda"]
-                if isinstance(row["Total (Carteira)"], str):
-                    total_carteira = float(row["Total (Carteira)"].replace(",", "."))
-                else:
-                    total_carteira = row["Total (Carteira)"]
-                if math.isnan(total_carteira):
-                    total_carteira = None
-                preco_medio = float(
-                    row["Preço Médio"]
-                    .replace("$", "")
-                    .replace(".", "")
-                    .replace(",", ".")
-                )
+                meta_moeda = _parse_number(row["meta Moeda"])
+                total_carteira = _parse_number(row["Total (Carteira)"], allow_nan=True)
+                preco_medio = _parse_preco_medio(row["Preço Médio"])
+
                 # Salvar no banco de dados usando o CryptoDBManager
                 crypto_db_manager.save_crypto_asset(
                     crypto=crypto,
                     preco_medio=preco_medio,
                     percentual=percentual,
                     pontos=pontos,
-                    meta_dollar=meta_dollar,
                     meta_moeda=meta_moeda,
                     total_carteira=total_carteira,
                 )
@@ -72,3 +54,51 @@ def sync_crypto_data(sheet_url, db_path="crypto_db.json"):
 
     except Exception as e:
         print(f"Erro ao sincronizar dados: {e}")
+
+
+def _parse_percentual(value):
+    """
+    Converte o percentual em string para float, se necessário.
+
+    Args:
+        value: Valor do percentual, podendo ser string ou float.
+
+    Returns:
+        float: Percentual convertido.
+    """
+    if isinstance(value, str):
+        return float(value.strip("%").replace(",", "."))
+    return value
+
+
+def _parse_number(value, allow_nan=False):
+    """
+    Converte um valor numérico (string ou float) para float.
+
+    Args:
+        value: Valor numérico como string ou float.
+        allow_nan (bool): Se True, permite que NaN seja retornado.
+
+    Returns:
+        float: Valor convertido ou None se NaN e allow_nan=True.
+    """
+    if isinstance(value, str):
+        value = value.replace(",", ".")
+    result = float(value)
+    if math.isnan(result) and allow_nan:
+        return None
+    return result
+
+
+def _parse_preco_medio(value):
+    """
+    Remove caracteres não numéricos de valores de preço médio e converte para float.
+
+    Args:
+        value (str): Valor do preço médio como string.
+
+    Returns:
+        float: Valor convertido.
+    """
+    return float(value.replace("$", "").replace(".", "").replace(",", "."))
+

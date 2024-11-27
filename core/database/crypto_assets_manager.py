@@ -34,7 +34,6 @@ class CryptoAssetsManager:
         preco_medio,
         percentual,
         pontos,
-        meta_dollar,
         meta_moeda,
         total_carteira,
     ):
@@ -49,7 +48,6 @@ class CryptoAssetsManager:
             "preco_medio": preco_medio,
             "percentual": percentual,
             "pontos": pontos,
-            "meta_dollar": meta_dollar,
             "meta_moeda": meta_moeda,
             "total_carteira": total_carteira,
         }

@@ -24,9 +24,7 @@ def main():
     private_service = BinancePrivateService()
     db_manager = CryptoAssetsManager()
     config = get_config()
-    sync_crypto_data(
-        "https://docs.google.com/spreadsheets/d/1NOu_ysYqj9qk1ICZbMtrRhhZe-2sXa5Z4jjAGy4uNrM/edit?gid=0"
-    )
+    sync_crypto_data(config["planilha"])
     logger.info("Iniciando análise de portfólio...")
 
     # Instancia o caso de uso
@@ -52,7 +50,7 @@ def main():
         except Exception as e:
             logger.error(f"Erro durante a execução: {e}")
         finally:
-            time.sleep(60)
+            time.sleep(5)
 
 
 if __name__ == "__main__":

@@ -29,7 +29,14 @@ class CryptoAssetsManager:
         return asset.get("total_carteira", 0.0)
 
     def save_crypto_asset(
-        self, crypto, percentual, pontos, meta_dollar, meta_moeda, total_carteira
+        self,
+        crypto,
+        preco_medio,
+        percentual,
+        pontos,
+        meta_dollar,
+        meta_moeda,
+        total_carteira,
     ):
         """
         Salva ou atualiza os dados de um ativo no banco de dados.
@@ -39,6 +46,7 @@ class CryptoAssetsManager:
 
         asset_data = {
             "crypto": crypto,
+            "preco_medio": preco_medio,
             "percentual": percentual,
             "pontos": pontos,
             "meta_dollar": meta_dollar,

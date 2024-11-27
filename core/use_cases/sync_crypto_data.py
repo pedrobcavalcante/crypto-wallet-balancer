@@ -23,6 +23,7 @@ def sync_crypto_data(sheet_url, db_path="crypto_db.json"):
         # Filtrar as colunas necessárias
         columns_to_display = [
             "Crypto",
+            "Preço Médio",
             "Percentual",
             "Pontos",
             "Meta($):",
@@ -51,10 +52,16 @@ def sync_crypto_data(sheet_url, db_path="crypto_db.json"):
                     total_carteira = row["Total (Carteira)"]
                 if math.isnan(total_carteira):
                     total_carteira = None
-
+                preco_medio = float(
+                    row["Preço Médio"]
+                    .replace("$", "")
+                    .replace(".", "")
+                    .replace(",", ".")
+                )
                 # Salvar no banco de dados usando o CryptoDBManager
                 crypto_db_manager.save_crypto_asset(
                     crypto=crypto,
+                    preco_medio=preco_medio,
                     percentual=percentual,
                     pontos=pontos,
                     meta_dollar=meta_dollar,

@@ -57,9 +57,13 @@ class AssetAnalyzer:
             difference_total = recommendation["difference_total"]
             difference_in_dolar = difference_total * current_price
             min_order_value = get_config()["min_order_value"]
+            recommendation["preco_medio"] = saved_asset["preco_medio"]
             if abs(difference_in_dolar) < min_order_value:
                 recommendation["action"] = "hold"
-            elif difference > self.max_percentage_difference:
+            elif (
+                difference > self.max_percentage_difference
+                and current_price > saved_asset["preco_medio"]
+            ):
                 target_value = (saved_asset["percentual"] / 100) * portfolio_value
                 target_quantity = target_value / current_price
                 quantity_to_sell = current_quantity - target_quantity
@@ -76,6 +80,7 @@ class AssetAnalyzer:
             else:
                 recommendation["action"] = "hold"
             recommendation["price"] = current_price
+
             logger.debug(f"Recomendação para {asset['name']}: {recommendation}")
             return recommendation
 

@@ -76,14 +76,18 @@ class BinancePrivateService(BinanceBaseService):
 
         try:
             # Envia a ordem de teste via requisição HTTP
-            endpoint = "/api/v3/order/test"
+            endpoint = "/api/v3/order"
             self._make_request(endpoint, params, request_type="POST")
 
             print(f"Ordem de teste {side.lower()} enviada com sucesso!")
 
             # Envia a notificação via Telegram
-            # message = f"Ordem de {side.lower()} simulada enviada: {symbol} - {quantity} - {price}"
-            # self.telegram_notifier.send_message(message, "65244254")
+            message = (
+                f"Ordem de {side.lower()} enviada: {symbol} - {quantity} - {price}"
+            )
+            self.telegram_notifier.send_message(
+                message, get_config()["telegram_chat_id"]
+            )
 
         except Exception as e:
             print(f"Erro ao enviar ordem de teste: {e}")
@@ -99,7 +103,7 @@ class BinancePrivateService(BinanceBaseService):
         print(f"Ativo: {symbol}")
         print(f"Quantidade: {quantity}")
         print(f"Preço: {price}")
-        print("Tipo de Ordem: LIMIT (Simulada)")
+        print("Tipo de Ordem: LIMIT")
         print("----------------------\n")
 
         # Chama o método genérico para enviar a ordem de compra
@@ -116,7 +120,7 @@ class BinancePrivateService(BinanceBaseService):
         print(f"Ativo: {symbol}")
         print(f"Quantidade: {quantity}")
         print(f"Preço: {price}")
-        print("Tipo de Ordem: LIMIT (Simulada)")
+        print("Tipo de Ordem: LIMIT")
         print("----------------------\n")
 
         # Chama o método genérico para enviar a ordem de venda

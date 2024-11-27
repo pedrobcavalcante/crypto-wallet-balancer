@@ -11,11 +11,10 @@ def get_config():
         "api_key": os.getenv("BINANCE_API_KEY"),
         "api_secret": os.getenv("BINANCE_API_SECRET"),
         "telegram_bot_token": os.getenv("TELEGRAM_BOT_TOKEN"),
+        "telegram_chat_id": os.getenv("TELEGRAM_CHAT_ID"),
         "base_url": "https://api.binance.com",
         "min_order_value": float(os.getenv("MIN_ORDER_VALUE", 6.0)),
         "max_order_value": float(os.getenv("MAX_ORDER_VALUE", 10.0)),
-        "max_percentage_difference": float(
-            os.getenv("MAX_PERCENTAGE_DIFFERENCE", 0.0001)
-        ),
+        "max_percentage_difference": float(os.getenv("MAX_PERCENTAGE_DIFFERENCE", 3.0)),
         "planilha": os.getenv("PLANILHA"),
     }

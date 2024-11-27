@@ -143,7 +143,7 @@ class AssetAnalyzer:
     ) -> Dict[str, Any]:
         saved_percentage = saved_asset["percentual"]
         current_percentage = asset["percentual"]
-        difference = current_percentage - saved_percentage
+        difference = ((current_percentage / saved_percentage) - 1) * 100
         meta_total = saved_asset["meta_moeda"]
         valor_atual = asset["quantity"]
         difference_total = meta_total - valor_atual

@@ -28,7 +28,8 @@ def atualizar_preco_medio(
 
     quantidade_atual = existing_asset.get("total_carteira", 0.0) or 0.0
     preco_medio_atual = existing_asset.get("preco_medio", 0.0) or 0.0
-
+    if isinstance(nova_quantidade, str):
+        nova_quantidade = float(nova_quantidade)
     # Calcular o novo preço médio e nova quantidade total
     nova_quantidade_total = quantidade_atual + nova_quantidade
     novo_preco_medio = (

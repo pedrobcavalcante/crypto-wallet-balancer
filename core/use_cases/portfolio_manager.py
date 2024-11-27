@@ -67,8 +67,8 @@ class PortfolioManager:
 
         if portfolio_value > 0:
             for asset in asset_details:
-                asset["percentage"] = (asset["value"] / portfolio_value) * 100
-            asset_details.sort(key=lambda x: x["percentage"], reverse=True)
+                asset["percentual"] = (asset["value"] / portfolio_value) * 100
+            asset_details.sort(key=lambda x: x["percentual"], reverse=True)
 
         logger.debug(f"Detalhes dos ativos: {asset_details}")
         return asset_details, portfolio_value

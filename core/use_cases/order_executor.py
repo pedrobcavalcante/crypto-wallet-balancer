@@ -30,7 +30,9 @@ class OrderExecutor:
             if not filters:
                 return
             # Formatar quantidade e preço
-            formatted_quantity = self._format_quantity(quantity_adjusted, filters["step_size"])
+            formatted_quantity = self._format_quantity(
+                quantity_adjusted, filters["step_size"]
+            )
 
             # Verificar quantidade válida
             if float(formatted_quantity) <= 0:
@@ -45,10 +47,38 @@ class OrderExecutor:
         except Exception as e:
             logger.error(f"Erro ao executar ordem de {action} para {symbol}: {e}")
 
+    def _get_filters(
+        self, symbol: str, exchange_info: Dict[str, Any]
+    ) -> Dict[str, float]:
+        try:
+            return {
+                "min_qty": float(
+                    self._get_filter(symbol, exchange_info, "LOT_SIZE")["minQty"]
+                ),
+                "step_size": float(
+                    self._get_filter(symbol, exchange_info, "LOT_SIZE")["stepSize"]
+                ),
+                "min_notional": float(
+                    self._get_filter(symbol, exchange_info, "NOTIONAL")["minNotional"]
+                ),
+                "max_notional": float(
+                    self._get_filter(symbol, exchange_info, "NOTIONAL").get(
+                        "maxNotional", float("inf")
+                    )
+                ),
+                "tick_size": float(
+                    self._get_filter(symbol, exchange_info, "PRICE_FILTER")["tickSize"]
+                ),
+            }
+        except KeyError as e:
+            logger.error(f"Erro ao obter filtros para {symbol}: {e}")
+            return None
+
     def _adjust_price(
         self, price: float, quantity: float, symbol: str, action: str
     ) -> Optional[float]:
         min_order_value = get_config()["min_order_value"]
+        max_order_value = get_config()["max_order_value"]
         if price * quantity < min_order_value:
             logger.info(
                 f"Ordem de {action} para {symbol} com valor total de {price * quantity:.2f} USDT "
@@ -56,7 +86,10 @@ class OrderExecutor:
                 f"Ordem não foi executada."
             )
         else:
-            return min_order_value / price
+            if price * quantity > max_order_value:
+                return max_order_value / price
+            else:
+                return quantity
 
     def _send_order(self, action: str, symbol: str, quantity: str, price: str):
         logger.info(

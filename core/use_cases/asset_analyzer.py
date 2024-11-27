@@ -60,14 +60,14 @@ class AssetAnalyzer:
             if abs(difference_in_dolar) < min_order_value:
                 recommendation["action"] = "hold"
             elif difference > self.max_percentage_difference:
-                target_value = (saved_asset["percentage"] / 100) * portfolio_value
+                target_value = (saved_asset["percentual"] / 100) * portfolio_value
                 target_quantity = target_value / current_price
                 quantity_to_sell = current_quantity - target_quantity
                 recommendation["action"] = "sell"
                 recommendation["quantity"] = quantity_to_sell
 
             elif difference < -self.max_percentage_difference:
-                target_value = (saved_asset["percentage"] / 100) * portfolio_value
+                target_value = (saved_asset["percentual"] / 100) * portfolio_value
                 target_quantity = target_value / current_price
                 quantity_to_buy = target_quantity - current_quantity
                 recommendation["action"] = "buy"
@@ -137,7 +137,7 @@ class AssetAnalyzer:
         self, asset: Dict[str, float], saved_asset: Dict[str, Any]
     ) -> Dict[str, Any]:
         saved_percentage = saved_asset["percentual"]
-        current_percentage = asset["percentage"]
+        current_percentage = asset["percentual"]
         difference = current_percentage - saved_percentage
         meta_total = saved_asset["meta_moeda"]
         valor_atual = asset["quantity"]
